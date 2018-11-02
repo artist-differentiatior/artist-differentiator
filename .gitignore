@@ -1,3 +1,4 @@
 imagenet-vgg-verydeep-19.mat
 artist_differentiator
 *.pyc
+venv
