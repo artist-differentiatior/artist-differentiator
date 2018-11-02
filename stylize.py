@@ -67,6 +67,7 @@ def stylize(network, initial, initial_noiseblend, content, styles, preserve_colo
     for style_layer in STYLE_LAYERS:
         style_layers_weights[style_layer] /= layer_weights_sum
 
+    # TODO: Remove content parts below
     # compute content features in feedforward mode
     g = tf.Graph()
     with g.as_default(), g.device('/cpu:0'), tf.Session() as sess:
@@ -76,6 +77,7 @@ def stylize(network, initial, initial_noiseblend, content, styles, preserve_colo
         for layer in CONTENT_LAYERS:
             content_features[layer] = net[layer].eval(feed_dict={image: content_pre})
 
+    # TODO: Make three different graphs, one each for anchor, positive, negative.
     # compute style features in feedforward mode
     for i in range(len(styles)):
         g = tf.Graph()
@@ -91,6 +93,7 @@ def stylize(network, initial, initial_noiseblend, content, styles, preserve_colo
 
     initial_content_noise_coeff = 1.0 - initial_noiseblend
 
+    # TODO: Remove all code for image generating
     # make stylized image using backpropogation
     with tf.Graph().as_default():
         if initial is None:
@@ -117,6 +120,9 @@ def stylize(network, initial, initial_noiseblend, content, styles, preserve_colo
                     content_features[content_layer].size))
         content_loss += reduce(tf.add, content_losses)
 
+
+        
+        # TODO: Remove loss code, define new loss function
         # style loss
         style_loss = 0
         for i in range(len(styles)):
@@ -164,6 +170,7 @@ def stylize(network, initial, initial_noiseblend, content, styles, preserve_colo
         # optimizer setup
         train_step = tf.train.AdamOptimizer(learning_rate, beta1, beta2, epsilon).minimize(loss)
 
+        # TODO: Enter batches of images in the loop
         # optimization
         best_loss = float('inf')
         best = None
