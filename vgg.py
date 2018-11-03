@@ -62,8 +62,7 @@ def net_preloaded(weights, input_image, pooling):
 def _conv_layer(input, weights, bias, layer_name):
 
     # TODO: check if this works
-    with tf.variable_scope("net", reuse=tf.AUTO_REUSE):
-         w = tf.get_variable("w" + layer_name, initializer=tf.constant(weights))
+    w = tf.get_variable("w" + layer_name, initializer=tf.Variable(weights))
     
     conv = tf.nn.conv2d(input, w, strides=(1, 1, 1, 1),
             padding='SAME')
