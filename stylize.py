@@ -95,7 +95,9 @@ def stylize(network, initial, initial_noiseblend, content, styles, preserve_colo
         for layer in STYLE_LAYERS:
             features = anchor_net[layer]
             features = tf.reshape(features, [-1, features.shape[3]])
-            gram = tf.divide(tf.multiply(tf.transpose(features), features), tf.size(features))
+            writer = tf.summary.FileWriter('.')
+            writer.add_graph(anchor_graph)
+            gram = tf.divide(tf.matmul(tf.transpose(features), features), tf.size(features))
             anchor_styles[layer] = gram
 
 
@@ -112,7 +114,7 @@ def stylize(network, initial, initial_noiseblend, content, styles, preserve_colo
         for layer in STYLE_LAYERS:
             features = positive_net[layer]
             features = tf.reshape(features, [-1, features.shape[3]])
-            gram = tf.divide(tf.multiply(tf.transpose(features), features), tf.size(features))
+            gram = tf.divide(tf.matmul(tf.transpose(features), features), tf.size(features))
             positive_styles[layer] = gram
             
 
@@ -129,7 +131,7 @@ def stylize(network, initial, initial_noiseblend, content, styles, preserve_colo
         for layer in STYLE_LAYERS:
             features = negative_net[layer]
             features = tf.reshape(features, [-1, features.shape[3]])
-            gram = tf.divide(tf.multiply(tf.transpose(features), features), tf.size(features))
+            gram = tf.divide(tf.matmul(tf.transpose(features), features), tf.size(features))
             negative_styles[layer] = gram
             
     """
