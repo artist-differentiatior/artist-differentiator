@@ -128,16 +128,26 @@ def stylize(network, initial, initial_noiseblend, content, styles, preserve_colo
             else:
                 print('Iteration %4d/%4d' % (i + 1, iterations))
 
-            style_pre = np.array([vgg.preprocess(styles[0], vgg_mean_pixel)])
+            style_pre0 = np.array([vgg.preprocess(styles[0], vgg_mean_pixel)])
+            style_pre1 = np.array([vgg.preprocess(styles[1], vgg_mean_pixel)])
+            style_pre2 = np.array([vgg.preprocess(styles[2], vgg_mean_pixel)])
             
-            train_step.run(feed_dict={anchor_image : style_pre, positive_image: style_pre, negative_image: style_pre})
+            train_step.run(feed_dict={anchor_image : style_pre0, positive_image: style_pre1, negative_image: style_pre2})
+            #print loss
+            print(loss.eval(feed_dict={anchor_image : style_pre0, positive_image: style_pre1, negative_image: style_pre2}))
 
+
+            """
             last_step = (i == iterations - 1)
             if last_step or (print_iterations and i % print_iterations == 0):
                 loss_vals = get_loss_vals(loss_store)
                 print_progress(loss_vals)
             else:
                 loss_vals = None
+
+            """
+
+            """
 
             if (checkpoint_iterations and i % checkpoint_iterations == 0) or last_step:
                 this_loss = loss.eval()
@@ -179,8 +189,9 @@ def stylize(network, initial, initial_noiseblend, content, styles, preserve_colo
                     img_out = np.array(Image.fromarray(combined_yuv, 'YCbCr').convert('RGB'))
             else:
                 img_out = None
-
-            yield i+1 if last_step else i, img_out, loss_vals
+            """
+            #removed image out, yield i+1 if last_step else i, img_out, loss_vals
+            yield i+1 if last_step else i, loss_vals
 
             iteration_end = time.time()
             iteration_times.append(iteration_end - iteration_start)
