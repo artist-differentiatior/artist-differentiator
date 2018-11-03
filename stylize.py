@@ -67,7 +67,10 @@ def stylize(network, initial, initial_noiseblend, content, styles, preserve_colo
     for style_layer in STYLE_LAYERS:
         style_layers_weights[style_layer] /= layer_weights_sum
 
-    # TODO: Remove content parts below
+"""
+# Not needed. Content extraction code.
+
+    
     # compute content features in feedforward mode
     g = tf.Graph()
     with g.as_default(), g.device('/cpu:0'), tf.Session() as sess:
@@ -76,9 +79,63 @@ def stylize(network, initial, initial_noiseblend, content, styles, preserve_colo
         content_pre = np.array([vgg.preprocess(content, vgg_mean_pixel)])
         for layer in CONTENT_LAYERS:
             content_features[layer] = net[layer].eval(feed_dict={image: content_pre})
+"""
 
-    # TODO: Make three different graphs, one each for anchor, positive, negative.
-    # compute style features in feedforward mode
+
+    # Builds the anchor graph
+    # Anchor should be the first image in "styles"
+    # TODO: test
+    anchor_graph = tf.Graph()
+    with anchor_graph.as_default(), anchor_graph.device('/cpu:0'):
+
+        anchor_image = tf.placeholder('float', shape=style_shapes[0])
+        anchor_net = vgg.net_preloaded(vgg_weights, anchor_image, pooling)
+
+        anchor_features = {}
+        for layer in STYLE_LAYERS:
+            features = anchor_net[layer]
+            features = tf.reshape(features, [-1, features.shape[3]])
+            gram = tf.divide(tf.multiply(tf.transpose(features), features), tf.size(features))
+            anchor_features[layer] = gram
+
+
+    # Builds the positive graph
+    # Positive should be the second image in "styles"
+    # TODO: test
+    positive_graph = tf.Graph()
+    with positive_graph.as_default(), positive_graph.device('/cpu:0'):
+
+        positive_image = tf.placeholder('float', shape=style_shapes[1])
+        positive_net = vgg.net_preloaded(vgg_weights, positive_image, pooling)
+
+        positive_features = {}
+        for layer in STYLE_LAYERS:
+            features = positive_net[layer]
+            features = tf.reshape(features, [-1, features.shape[3]])
+            gram = tf.divide(tf.multiply(tf.transpose(features), features), tf.size(features))
+            positive_features[layer] = gram
+            
+
+    # Builds the negative graph
+    # Negative should be the third image in "styles"
+    # TODO: test
+    negative_graph = tf.Graph()
+    with negative_graph.as_default(), negative_graph.device('/cpu:0'):
+
+        negative_image = tf.placeholder('float', shape=style_shapes[2])
+        negative_net = vgg.net_preloaded(vgg_weights, negative_image, pooling)
+
+        negative_features = {}
+        for layer in STYLE_LAYERS:
+            features = negative_net[layer]
+            features = tf.reshape(features, [-1, features.shape[3]])
+            gram = tf.divide(tf.multiply(tf.transpose(features), features), tf.size(features))
+            negative_features[layer] = gram
+            
+"""
+# Not needed. Old style extraction code
+                                      
+
     for i in range(len(styles)):
         g = tf.Graph()
         with g.as_default(), g.device('/cpu:0'), tf.Session() as sess:
@@ -90,10 +147,18 @@ def stylize(network, initial, initial_noiseblend, content, styles, preserve_colo
                 features = np.reshape(features, (-1, features.shape[3]))
                 gram = np.matmul(features.T, features) / features.size
                 style_features[i][layer] = gram
+"""
+
+
+
+
+
+"""
+# Not needed. Old loss code
 
     initial_content_noise_coeff = 1.0 - initial_noiseblend
 
-    # TODO: Remove all code for image generating
+
     # make stylized image using backpropogation
     with tf.Graph().as_default():
         if initial is None:
@@ -148,6 +213,9 @@ def stylize(network, initial, initial_noiseblend, content, styles, preserve_colo
 
         # total loss
         loss = content_loss + style_loss + tv_loss
+"""
+
+
 
         # We use OrderedDict to make sure we have the same order of loss types
         # (content, tv, style, total) as defined by the initial costruction of
