@@ -67,7 +67,10 @@ def stylize(network, initial, initial_noiseblend, content, styles, preserve_colo
     for style_layer in STYLE_LAYERS:
         style_layers_weights[style_layer] /= layer_weights_sum
 
-    # TODO: Remove content parts below
+    """
+    # Not needed. Content extraction code.
+
+    
     # compute content features in feedforward mode
     g = tf.Graph()
     with g.as_default(), g.device('/cpu:0'), tf.Session() as sess:
@@ -76,9 +79,65 @@ def stylize(network, initial, initial_noiseblend, content, styles, preserve_colo
         content_pre = np.array([vgg.preprocess(content, vgg_mean_pixel)])
         for layer in CONTENT_LAYERS:
             content_features[layer] = net[layer].eval(feed_dict={image: content_pre})
+    """
 
-    # TODO: Make three different graphs, one each for anchor, positive, negative.
-    # compute style features in feedforward mode
+
+    # Builds the anchor graph
+    # Anchor should be the first image in "styles"
+    # TODO: test
+    anchor_graph = tf.Graph()
+    with anchor_graph.as_default(), anchor_graph.device('/cpu:0'):
+
+        anchor_image = tf.placeholder('float', shape=style_shapes[0])
+        anchor_net = vgg.net_preloaded(vgg_weights, anchor_image, pooling)
+
+        anchor_styles = {}
+        for layer in STYLE_LAYERS:
+            features = anchor_net[layer]
+            features = tf.reshape(features, [-1, features.shape[3]])
+            writer = tf.summary.FileWriter('.')
+            writer.add_graph(anchor_graph)
+            gram = tf.divide(tf.matmul(tf.transpose(features), features), tf.size(features))
+            anchor_styles[layer] = gram
+
+
+    # Builds the positive graph
+    # Positive should be the second image in "styles"
+    # TODO: test
+    positive_graph = tf.Graph()
+    with positive_graph.as_default(), positive_graph.device('/cpu:0'):
+
+        positive_image = tf.placeholder('float', shape=style_shapes[1])
+        positive_net = vgg.net_preloaded(vgg_weights, positive_image, pooling)
+
+        positive_styles = {}
+        for layer in STYLE_LAYERS:
+            features = positive_net[layer]
+            features = tf.reshape(features, [-1, features.shape[3]])
+            gram = tf.divide(tf.matmul(tf.transpose(features), features), tf.size(features))
+            positive_styles[layer] = gram
+            
+
+    # Builds the negative graph
+    # Negative should be the third image in "styles"
+    # TODO: test
+    negative_graph = tf.Graph()
+    with negative_graph.as_default(), negative_graph.device('/cpu:0'):
+
+        negative_image = tf.placeholder('float', shape=style_shapes[2])
+        negative_net = vgg.net_preloaded(vgg_weights, negative_image, pooling)
+
+        negative_styles = {}
+        for layer in STYLE_LAYERS:
+            features = negative_net[layer]
+            features = tf.reshape(features, [-1, features.shape[3]])
+            gram = tf.divide(tf.matmul(tf.transpose(features), features), tf.size(features))
+            negative_styles[layer] = gram
+            
+    """
+    # Not needed. Old style extraction code
+                                      
+
     for i in range(len(styles)):
         g = tf.Graph()
         with g.as_default(), g.device('/cpu:0'), tf.Session() as sess:
@@ -90,10 +149,20 @@ def stylize(network, initial, initial_noiseblend, content, styles, preserve_colo
                 features = np.reshape(features, (-1, features.shape[3]))
                 gram = np.matmul(features.T, features) / features.size
                 style_features[i][layer] = gram
+    """
+
+
+
+
+
+
+
+    """
+    # Not needed. Old loss code
 
     initial_content_noise_coeff = 1.0 - initial_noiseblend
 
-    # TODO: Remove all code for image generating
+
     # make stylized image using backpropogation
     with tf.Graph().as_default():
         if initial is None:
@@ -148,107 +217,125 @@ def stylize(network, initial, initial_noiseblend, content, styles, preserve_colo
 
         # total loss
         loss = content_loss + style_loss + tv_loss
+    """
 
-        # We use OrderedDict to make sure we have the same order of loss types
-        # (content, tv, style, total) as defined by the initial costruction of
-        # the loss_store dict. This is important for print_progress() and
-        # saving loss_arrs (column order) in the main script.
-        #
-        # Subtle Gotcha (tested with Python 3.5): The syntax
-        # OrderedDict(key1=val1, key2=val2, ...) does /not/ create the same
-        # order since, apparently, it first creates a normal dict with random
-        # order (< Python 3.7) and then wraps that in an OrderedDict. We have
-        # to pass in a data structure which is already ordered. I'd call this a
-        # bug, since both constructor syntax variants result in different
-        # objects. In 3.6, the order is preserved in dict() in CPython, in 3.7
-        # they finally made it part of the language spec. Thank you!
-        loss_store = OrderedDict([('content', content_loss),
-                                  ('style', style_loss),
-                                  ('tv', tv_loss),
-                                  ('total', loss)])
+    
+    # New loss = sum over layers(  norm(A_style - P_style) - norm(A_style - N_style) - norm(P_style - N_style) )
+    # TODO: test
+    loss = tf.add_n(tf.nn.l2_loss(anchor_styles[layer] - positive_styles[layer]) for layer in STYLE_LAYERS) \
+           - tf.add_n(tf.nn.l2_loss(anchor_styles[layer] - negative_styles[layer]) for layer in STYLE_LAYERS) \
+           - tf.add_n(tf.nn.l2_loss(positive_styles[layer] - negative_styles[layer]) for layer in STYLE_LAYERS)
+    
+    
 
-        # optimizer setup
-        train_step = tf.train.AdamOptimizer(learning_rate, beta1, beta2, epsilon).minimize(loss)
+        
+    """
+    # Not needed. Our loss is now one single quantity
 
-        # TODO: Enter batches of images in the loop
-        # optimization
-        best_loss = float('inf')
-        best = None
-        with tf.Session() as sess:
-            sess.run(tf.global_variables_initializer())
-            print('Optimization started...')
-            if (print_iterations and print_iterations != 0):
-                print_progress(get_loss_vals(loss_store))
-            iteration_times = []
-            start = time.time()
-            for i in range(iterations):
-                iteration_start = time.time()
-                if i > 0:
-                    elapsed = time.time() - start
-                    # take average of last couple steps to get time per iteration
-                    remaining = np.mean(iteration_times[-10:]) * (iterations - i)
-                    print('Iteration %4d/%4d (%s elapsed, %s remaining)' % (
-                        i + 1,
-                        iterations,
-                        hms(elapsed),
-                        hms(remaining)
-                    ))
-                else:
-                    print('Iteration %4d/%4d' % (i + 1, iterations))
-                train_step.run()
+    # We use OrderedDict to make sure we have the same order of loss types
+    # (content, tv, style, total) as defined by the initial costruction of
+    # the loss_store dict. This is important for print_progress() and
+    # saving loss_arrs (column order) in the main script.
+    #
+    # Subtle Gotcha (tested with Python 3.5): The syntax
+    # OrderedDict(key1=val1, key2=val2, ...) does /not/ create the same
+    # order since, apparently, it first creates a normal dict with random
+    # order (< Python 3.7) and then wraps that in an OrderedDict. We have
+    # to pass in a data structure which is already ordered. I'd call this a
+    # bug, since both constructor syntax variants result in different
+    # objects. In 3.6, the order is preserved in dict() in CPython, in 3.7
+    # they finally made it part of the language spec. Thank you!
+    loss_store = OrderedDict([('content', content_loss),
+                              ('style', style_loss),
+                              ('tv', tv_loss),
+                              ('total', loss)])
+    """
 
-                last_step = (i == iterations - 1)
-                if last_step or (print_iterations and i % print_iterations == 0):
-                    loss_vals = get_loss_vals(loss_store)
-                    print_progress(loss_vals)
-                else:
-                    loss_vals = None
+    
 
-                if (checkpoint_iterations and i % checkpoint_iterations == 0) or last_step:
-                    this_loss = loss.eval()
-                    if this_loss < best_loss:
-                        best_loss = this_loss
-                        best = image.eval()
+    # optimizer setup
+    # TODO: try adding triplet images via feed_dict
+    train_step = tf.train.AdamOptimizer(learning_rate, beta1, beta2, epsilon).minimize(loss)
 
-                    img_out = vgg.unprocess(best.reshape(shape[1:]), vgg_mean_pixel)
+    # TODO: Enter batches of images in the loop
+    # optimization
+    best_loss = float('inf')
+    best = None
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+        print('Optimization started...')
+        if (print_iterations and print_iterations != 0):
+            print_progress(get_loss_vals(loss_store))
+        iteration_times = []
+        start = time.time()
+        for i in range(iterations):
+            iteration_start = time.time()
+            if i > 0:
+                elapsed = time.time() - start
+                # take average of last couple steps to get time per iteration
+                remaining = np.mean(iteration_times[-10:]) * (iterations - i)
+                print('Iteration %4d/%4d (%s elapsed, %s remaining)' % (
+                    i + 1,
+                    iterations,
+                    hms(elapsed),
+                    hms(remaining)
+                ))
+            else:
+                print('Iteration %4d/%4d' % (i + 1, iterations))
+            train_step.run()
 
-                    if preserve_colors and preserve_colors == True:
-                        original_image = np.clip(content, 0, 255)
-                        styled_image = np.clip(img_out, 0, 255)
+            last_step = (i == iterations - 1)
+            if last_step or (print_iterations and i % print_iterations == 0):
+                loss_vals = get_loss_vals(loss_store)
+                print_progress(loss_vals)
+            else:
+                loss_vals = None
 
-                        # Luminosity transfer steps:
-                        # 1. Convert stylized RGB->grayscale accoriding to Rec.601 luma (0.299, 0.587, 0.114)
-                        # 2. Convert stylized grayscale into YUV (YCbCr)
-                        # 3. Convert original image into YUV (YCbCr)
-                        # 4. Recombine (stylizedYUV.Y, originalYUV.U, originalYUV.V)
-                        # 5. Convert recombined image from YUV back to RGB
+            if (checkpoint_iterations and i % checkpoint_iterations == 0) or last_step:
+                this_loss = loss.eval()
+                if this_loss < best_loss:
+                    best_loss = this_loss
+                    best = image.eval()
 
-                        # 1
-                        styled_grayscale = rgb2gray(styled_image)
-                        styled_grayscale_rgb = gray2rgb(styled_grayscale)
+                img_out = vgg.unprocess(best.reshape(shape[1:]), vgg_mean_pixel)
 
-                        # 2
-                        styled_grayscale_yuv = np.array(Image.fromarray(styled_grayscale_rgb.astype(np.uint8)).convert('YCbCr'))
+                if preserve_colors and preserve_colors == True:
+                    original_image = np.clip(content, 0, 255)
+                    styled_image = np.clip(img_out, 0, 255)
 
-                        # 3
-                        original_yuv = np.array(Image.fromarray(original_image.astype(np.uint8)).convert('YCbCr'))
+                    # Luminosity transfer steps:
+                    # 1. Convert stylized RGB->grayscale accoriding to Rec.601 luma (0.299, 0.587, 0.114)
+                    # 2. Convert stylized grayscale into YUV (YCbCr)
+                    # 3. Convert original image into YUV (YCbCr)
+                    # 4. Recombine (stylizedYUV.Y, originalYUV.U, originalYUV.V)
+                    # 5. Convert recombined image from YUV back to RGB
 
-                        # 4
-                        w, h, _ = original_image.shape
-                        combined_yuv = np.empty((w, h, 3), dtype=np.uint8)
-                        combined_yuv[..., 0] = styled_grayscale_yuv[..., 0]
-                        combined_yuv[..., 1] = original_yuv[..., 1]
-                        combined_yuv[..., 2] = original_yuv[..., 2]
+                    # 1
+                    styled_grayscale = rgb2gray(styled_image)
+                    styled_grayscale_rgb = gray2rgb(styled_grayscale)
 
-                        # 5
-                        img_out = np.array(Image.fromarray(combined_yuv, 'YCbCr').convert('RGB'))
-                else:
-                    img_out = None
+                    # 2
+                    styled_grayscale_yuv = np.array(Image.fromarray(styled_grayscale_rgb.astype(np.uint8)).convert('YCbCr'))
 
-                yield i+1 if last_step else i, img_out, loss_vals
+                    # 3
+                    original_yuv = np.array(Image.fromarray(original_image.astype(np.uint8)).convert('YCbCr'))
 
-                iteration_end = time.time()
-                iteration_times.append(iteration_end - iteration_start)
+                    # 4
+                    w, h, _ = original_image.shape
+                    combined_yuv = np.empty((w, h, 3), dtype=np.uint8)
+                    combined_yuv[..., 0] = styled_grayscale_yuv[..., 0]
+                    combined_yuv[..., 1] = original_yuv[..., 1]
+                    combined_yuv[..., 2] = original_yuv[..., 2]
+
+                    # 5
+                    img_out = np.array(Image.fromarray(combined_yuv, 'YCbCr').convert('RGB'))
+            else:
+                img_out = None
+
+            yield i+1 if last_step else i, img_out, loss_vals
+
+            iteration_end = time.time()
+            iteration_times.append(iteration_end - iteration_start)
 
 
 def _tensor_size(tensor):
