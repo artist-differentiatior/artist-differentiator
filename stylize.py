@@ -11,7 +11,6 @@ import tensorflow as tf
 import vgg
 
 
-CONTENT_LAYERS = ('relu4_2', 'relu5_2')
 STYLE_LAYERS = ('relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1')
 
 
@@ -73,8 +72,7 @@ def stylize(network, initial, initial_noiseblend, content, styles, preserve_colo
     negative_styles = _generate_style(negative_net, STYLE_LAYERS)
 
     loss = tf.add_n([tf.nn.l2_loss(anchor_styles[layer] - positive_styles[layer]) for layer in STYLE_LAYERS]) \
-        - tf.add_n([tf.nn.l2_loss(anchor_styles[layer] - negative_styles[layer]) for layer in STYLE_LAYERS]) \
-        - tf.add_n([tf.nn.l2_loss(positive_styles[layer] - negative_styles[layer]) for layer in STYLE_LAYERS])
+        - tf.add_n([tf.nn.l2_loss(anchor_styles[layer] - negative_styles[layer]) for layer in STYLE_LAYERS])
         
     """
     # Not needed. Our loss is now one single quantity
