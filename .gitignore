@@ -5,3 +5,4 @@ venv
 .*
 learn_tf
 test.jpg
+*.csv
