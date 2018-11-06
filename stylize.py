@@ -71,8 +71,11 @@ def stylize(network, initial, initial_noiseblend, content, styles, preserve_colo
     positive_styles = _generate_style(positive_net, STYLE_LAYERS)
     negative_styles = _generate_style(negative_net, STYLE_LAYERS)
 
-    loss = tf.add_n([tf.nn.l2_loss(anchor_styles[layer] - positive_styles[layer]) for layer in STYLE_LAYERS]) \
-        - tf.add_n([tf.nn.l2_loss(anchor_styles[layer] - negative_styles[layer]) for layer in STYLE_LAYERS])
+    loss_threshold = 0.5
+
+    # Loss = max(norm(A - P) - norm(A - N) + loss_threshold, 0)
+    loss = tf.maximum(tf.add_n([tf.nn.l2_loss(anchor_styles[layer] - positive_styles[layer]) for layer in STYLE_LAYERS]) \
+                      - tf.add_n([tf.nn.l2_loss(anchor_styles[layer] - negative_styles[layer]) for layer in STYLE_LAYERS]) + loss_threshold, 0)
         
     """
     # Not needed. Our loss is now one single quantity
