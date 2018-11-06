@@ -11,7 +11,6 @@ import tensorflow as tf
 import vgg
 
 
-CONTENT_LAYERS = ('relu4_2', 'relu5_2')
 STYLE_LAYERS = ('relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1')
 
 
@@ -49,185 +48,31 @@ def stylize(network, initial, initial_noiseblend, content, styles, preserve_colo
     """
     shape = (1,) + content.shape
     style_shapes = [(1,) + style.shape for style in styles]
-    content_features = {}
     style_features = [{} for _ in styles]
 
     vgg_weights, vgg_mean_pixel = vgg.load_net(network)
 
-    layer_weight = 1.0
-    style_layers_weights = {}
-    for style_layer in STYLE_LAYERS:
-        style_layers_weights[style_layer] = layer_weight
-        layer_weight *= style_layer_weight_exp
-
-    # normalize style layer weights
-    layer_weights_sum = 0
-    for style_layer in STYLE_LAYERS:
-        layer_weights_sum += style_layers_weights[style_layer]
-    for style_layer in STYLE_LAYERS:
-        style_layers_weights[style_layer] /= layer_weights_sum
-
-    """
-    # Not needed. Content extraction code.
-
-    
-    # compute content features in feedforward mode
-    g = tf.Graph()
-    with g.as_default(), g.device('/cpu:0'), tf.Session() as sess:
-        image = tf.placeholder('float', shape=shape)
-        net = vgg.net_preloaded(vgg_weights, image, pooling)
-        content_pre = np.array([vgg.preprocess(content, vgg_mean_pixel)])
-        for layer in CONTENT_LAYERS:
-            content_features[layer] = net[layer].eval(feed_dict={image: content_pre})
-    """
-
-
     # Builds the anchor graph
     # Anchor should be the first image in "styles"
     # TODO: test
-    anchor_graph = tf.Graph()
-    with anchor_graph.as_default(), anchor_graph.device('/cpu:0'):
+    #anchor_graph = tf.Graph()
+    #with anchor_graph.as_default(), anchor_graph.device('/cpu:0'):
 
-        anchor_image = tf.placeholder('float', shape=style_shapes[0])
+    anchor_image = tf.placeholder('float', shape=style_shapes[0])
+    positive_image = tf.placeholder('float', shape=style_shapes[1])
+    negative_image = tf.placeholder('float', shape=style_shapes[2])
+    
+    with tf.variable_scope("net", reuse=tf.AUTO_REUSE):
         anchor_net = vgg.net_preloaded(vgg_weights, anchor_image, pooling)
-
-        anchor_styles = {}
-        for layer in STYLE_LAYERS:
-            features = anchor_net[layer]
-            features = tf.reshape(features, [-1, features.shape[3]])
-            writer = tf.summary.FileWriter('.')
-            writer.add_graph(anchor_graph)
-            gram = tf.divide(tf.matmul(tf.transpose(features), features), tf.size(features))
-            anchor_styles[layer] = gram
-
-
-    # Builds the positive graph
-    # Positive should be the second image in "styles"
-    # TODO: test
-    positive_graph = tf.Graph()
-    with positive_graph.as_default(), positive_graph.device('/cpu:0'):
-
-        positive_image = tf.placeholder('float', shape=style_shapes[1])
         positive_net = vgg.net_preloaded(vgg_weights, positive_image, pooling)
-
-        positive_styles = {}
-        for layer in STYLE_LAYERS:
-            features = positive_net[layer]
-            features = tf.reshape(features, [-1, features.shape[3]])
-            gram = tf.divide(tf.matmul(tf.transpose(features), features), tf.size(features))
-            positive_styles[layer] = gram
-            
-
-    # Builds the negative graph
-    # Negative should be the third image in "styles"
-    # TODO: test
-    negative_graph = tf.Graph()
-    with negative_graph.as_default(), negative_graph.device('/cpu:0'):
-
-        negative_image = tf.placeholder('float', shape=style_shapes[2])
         negative_net = vgg.net_preloaded(vgg_weights, negative_image, pooling)
 
-        negative_styles = {}
-        for layer in STYLE_LAYERS:
-            features = negative_net[layer]
-            features = tf.reshape(features, [-1, features.shape[3]])
-            gram = tf.divide(tf.matmul(tf.transpose(features), features), tf.size(features))
-            negative_styles[layer] = gram
-            
-    """
-    # Not needed. Old style extraction code
-                                      
+    anchor_styles = _generate_style(anchor_net, STYLE_LAYERS)
+    positive_styles = _generate_style(positive_net, STYLE_LAYERS)
+    negative_styles = _generate_style(negative_net, STYLE_LAYERS)
 
-    for i in range(len(styles)):
-        g = tf.Graph()
-        with g.as_default(), g.device('/cpu:0'), tf.Session() as sess:
-            image = tf.placeholder('float', shape=style_shapes[i])
-            net = vgg.net_preloaded(vgg_weights, image, pooling)
-            style_pre = np.array([vgg.preprocess(styles[i], vgg_mean_pixel)])
-            for layer in STYLE_LAYERS:
-                features = net[layer].eval(feed_dict={image: style_pre})
-                features = np.reshape(features, (-1, features.shape[3]))
-                gram = np.matmul(features.T, features) / features.size
-                style_features[i][layer] = gram
-    """
-
-
-
-
-
-
-
-    """
-    # Not needed. Old loss code
-
-    initial_content_noise_coeff = 1.0 - initial_noiseblend
-
-
-    # make stylized image using backpropogation
-    with tf.Graph().as_default():
-        if initial is None:
-            noise = np.random.normal(size=shape, scale=np.std(content) * 0.1)
-            initial = tf.random_normal(shape) * 0.256
-        else:
-            initial = np.array([vgg.preprocess(initial, vgg_mean_pixel)])
-            initial = initial.astype('float32')
-            noise = np.random.normal(size=shape, scale=np.std(content) * 0.1)
-            initial = (initial) * initial_content_noise_coeff + (tf.random_normal(shape) * 0.256) * (1.0 - initial_content_noise_coeff)
-        image = tf.Variable(initial)
-        net = vgg.net_preloaded(vgg_weights, image, pooling)
-
-        # content loss
-        content_layers_weights = {}
-        content_layers_weights['relu4_2'] = content_weight_blend
-        content_layers_weights['relu5_2'] = 1.0 - content_weight_blend
-
-        content_loss = 0
-        content_losses = []
-        for content_layer in CONTENT_LAYERS:
-            content_losses.append(content_layers_weights[content_layer] * content_weight * (2 * tf.nn.l2_loss(
-                    net[content_layer] - content_features[content_layer]) /
-                    content_features[content_layer].size))
-        content_loss += reduce(tf.add, content_losses)
-
-
-        
-        # TODO: Remove loss code, define new loss function
-        # style loss
-        style_loss = 0
-        for i in range(len(styles)):
-            style_losses = []
-            for style_layer in STYLE_LAYERS:
-                layer = net[style_layer]
-                _, height, width, number = map(lambda i: i.value, layer.get_shape())
-                size = height * width * number
-                feats = tf.reshape(layer, (-1, number))
-                gram = tf.matmul(tf.transpose(feats), feats) / size
-                style_gram = style_features[i][style_layer]
-                style_losses.append(style_layers_weights[style_layer] * 2 * tf.nn.l2_loss(gram - style_gram) / style_gram.size)
-            style_loss += style_weight * style_blend_weights[i] * reduce(tf.add, style_losses)
-
-        # total variation denoising
-        tv_y_size = _tensor_size(image[:,1:,:,:])
-        tv_x_size = _tensor_size(image[:,:,1:,:])
-        tv_loss = tv_weight * 2 * (
-                (tf.nn.l2_loss(image[:,1:,:,:] - image[:,:shape[1]-1,:,:]) /
-                    tv_y_size) +
-                (tf.nn.l2_loss(image[:,:,1:,:] - image[:,:,:shape[2]-1,:]) /
-                    tv_x_size))
-
-        # total loss
-        loss = content_loss + style_loss + tv_loss
-    """
-
-    
-    # New loss = sum over layers(  norm(A_style - P_style) - norm(A_style - N_style) - norm(P_style - N_style) )
-    # TODO: test
-    loss = tf.add_n(tf.nn.l2_loss(anchor_styles[layer] - positive_styles[layer]) for layer in STYLE_LAYERS) \
-           - tf.add_n(tf.nn.l2_loss(anchor_styles[layer] - negative_styles[layer]) for layer in STYLE_LAYERS) \
-           - tf.add_n(tf.nn.l2_loss(positive_styles[layer] - negative_styles[layer]) for layer in STYLE_LAYERS)
-    
-    
-
+    loss = tf.add_n([tf.nn.l2_loss(anchor_styles[layer] - positive_styles[layer]) for layer in STYLE_LAYERS]) \
+        - tf.add_n([tf.nn.l2_loss(anchor_styles[layer] - negative_styles[layer]) for layer in STYLE_LAYERS])
         
     """
     # Not needed. Our loss is now one single quantity
@@ -282,7 +127,10 @@ def stylize(network, initial, initial_noiseblend, content, styles, preserve_colo
                 ))
             else:
                 print('Iteration %4d/%4d' % (i + 1, iterations))
-            train_step.run()
+
+            style_pre = np.array([vgg.preprocess(styles[0], vgg_mean_pixel)])
+            
+            train_step.run(feed_dict={anchor_image : style_pre, positive_image: style_pre, negative_image: style_pre})
 
             last_step = (i == iterations - 1)
             if last_step or (print_iterations and i % print_iterations == 0):
@@ -337,6 +185,16 @@ def stylize(network, initial, initial_noiseblend, content, styles, preserve_colo
             iteration_end = time.time()
             iteration_times.append(iteration_end - iteration_start)
 
+def _generate_style(net, style_layers):
+    styles = {}
+
+    for layer in style_layers:
+        features = net[layer]
+        features = tf.reshape(features, [-1, features.shape[3]])
+        gram = tf.divide(tf.matmul(tf.transpose(features), features), tf.size(features, out_type=tf.float32))
+        styles[layer] = gram
+
+    return styles
 
 def _tensor_size(tensor):
     from operator import mul
