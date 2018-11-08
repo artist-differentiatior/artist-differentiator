@@ -4,93 +4,54 @@ import csv
 
 def _parse_info_file(file_path):
 
+    '''
+    Parse info file. Create dictionary with keyword as artists and the correspnding value an 
+    array with paintings of that artist and info about those paintings.
+    '''
+
     with open(file_path, "r") as info_file:
 
         info_reader = csv.reader(info_file, dialect="excel", delimiter=",", quotechar="\"")
 
-        info_array = []
-        info_reader.next()
+        info_dict = {}
+        info = info_reader.next()
+
+        artist_index = info.index("artist")
+        filename_index = info.index("filename")
+        style_index = info.index("style")
 
         for row in info_reader:
-            info_array.append(row)
+            artist_name = row[artist_index]
+            painting_info = [row[filename_index], row[style_index]]
+            if artist_name not in info_dict:
+                info_dict[artist_name] = [painting_info]
+            else:
+                info_dict[artist_name].append(painting_info)
+
         
-    return info_array
+    return info_dict
 
-def generate_triplets():
+def generate_triplets(file_path):
 
-    info_array = _parse_info_file("./data_info/train_info.csv")
+    info_dict = _parse_info_file(file_path)
+    tripplet_array = []
 
-    anchor_images = []
-    anchor_artists = []
-    anchor_styles = []
-    
-    positive_images = []
-    
-    negative_images = []
+    for artist, painting_info in info_dict.iteritems():
+        assert len(painting_info) > 1, "Just 1 painting from %r, can't generate tripplet!" %artist
+        for i in range(0,len(painting_info) - 1):
+            tripplet_array.append([painting_info[i][0], painting_info[i + 1][0]])
 
-    # Choose anchors - Currently first image of each artist
-    for row in info_array:
-        image = row[0]
-        artist = row[1]
-        style = row[3]
 
-        if artist in anchor_artists:
-            continue
 
-        anchor_images.append(image)
-        anchor_artists.append(artist)
-        anchor_styles.append(style)
-
-    # Choose positives - Currently next occurrance of image by same artist as anchor
-    i = 0
-    for row in info_array:
-
-        if i >= len(anchor_images):
-            break
-        
-        image = row[0]
-        artist = row[1]
-        style = row[3]
-
-        if image in anchor_images:
-            continue
-        if artist != anchor_artists[i]:
-            continue
-
-        positive_images.append(image)
-        i += 1
+    return tripplet_array
 
     
-
-    # Choose negatives - Currently next occurrance of an image NOT by the same artist, but with the same style as anchor
-    i = 0
-    for row in info_array:
-
-        if i >= len(anchor_images):
-            break
-
-        image = row[0]
-        artist = row[1]
-        style = row[3]
-
-        if artist == anchor_artists[i]:
-            continue
-        if style != anchor_styles[i]:
-            continue
-
-        negative_images.append(image)
-        i += 1
-
-    
-
-    print(len(anchor_images))
-    print(len(info_array))
     
                 
 
 def main():
 
-    generate_triplets()
+    print(generate_triplets("test.csv"))
     
 
 if __name__ == "__main__":
