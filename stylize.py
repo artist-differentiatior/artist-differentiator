@@ -46,6 +46,10 @@ def stylize(network, initial, initial_noiseblend, content, styles, preserve_colo
 
     :rtype: iterator[tuple[int,image]]
     """
+    
+    minibatches = np.array([[styles[0], styles[1], styles[2]], [styles[3], styles[4], styles[5]], [styles[6], styles[7], styles[8]]])
+    minibatch_size = 3
+    
     shape = (1,) + content.shape
     style_shapes = [(1,) + style.shape for style in styles]
     style_features = [{} for _ in styles]
@@ -58,9 +62,9 @@ def stylize(network, initial, initial_noiseblend, content, styles, preserve_colo
     #anchor_graph = tf.Graph()
     #with anchor_graph.as_default(), anchor_graph.device('/cpu:0'):
 
-    anchor_image = tf.placeholder('float', shape=style_shapes[0])
-    positive_image = tf.placeholder('float', shape=style_shapes[1])
-    negative_image = tf.placeholder('float', shape=style_shapes[2])
+    anchor_image = tf.placeholder('float', shape=(minibatch_size, 224,224,3))
+    positive_image = tf.placeholder('float', shape=(minibatch_size, 224,224,3))
+    negative_image = tf.placeholder('float', shape=(minibatch_size, 224,224,3))
     
     with tf.variable_scope("net", reuse=tf.AUTO_REUSE):
         anchor_net = vgg.net_preloaded(vgg_weights, anchor_image, pooling)
@@ -71,41 +75,16 @@ def stylize(network, initial, initial_noiseblend, content, styles, preserve_colo
     positive_styles = _generate_style(positive_net, STYLE_LAYERS)
     negative_styles = _generate_style(negative_net, STYLE_LAYERS)
 
-    loss_threshold = 0.5
+    loss_threshold = 100
 
     # Loss = max(norm(A - P) - norm(A - N) + loss_threshold, 0)
     loss = tf.maximum(tf.add_n([tf.nn.l2_loss(anchor_styles[layer] - positive_styles[layer]) for layer in STYLE_LAYERS]) \
                       - tf.add_n([tf.nn.l2_loss(anchor_styles[layer] - negative_styles[layer]) for layer in STYLE_LAYERS]) + loss_threshold, 0)
-        
-    """
-    # Not needed. Our loss is now one single quantity
-
-    # We use OrderedDict to make sure we have the same order of loss types
-    # (content, tv, style, total) as defined by the initial costruction of
-    # the loss_store dict. This is important for print_progress() and
-    # saving loss_arrs (column order) in the main script.
-    #
-    # Subtle Gotcha (tested with Python 3.5): The syntax
-    # OrderedDict(key1=val1, key2=val2, ...) does /not/ create the same
-    # order since, apparently, it first creates a normal dict with random
-    # order (< Python 3.7) and then wraps that in an OrderedDict. We have
-    # to pass in a data structure which is already ordered. I'd call this a
-    # bug, since both constructor syntax variants result in different
-    # objects. In 3.6, the order is preserved in dict() in CPython, in 3.7
-    # they finally made it part of the language spec. Thank you!
-    loss_store = OrderedDict([('content', content_loss),
-                              ('style', style_loss),
-                              ('tv', tv_loss),
-                              ('total', loss)])
-    """
 
     
-
     # optimizer setup
-    # TODO: try adding triplet images via feed_dict
     train_step = tf.train.AdamOptimizer(learning_rate, beta1, beta2, epsilon).minimize(loss)
 
-    # TODO: Enter batches of images in the loop
     # optimization
     best_loss = float('inf')
     best = None
@@ -134,10 +113,12 @@ def stylize(network, initial, initial_noiseblend, content, styles, preserve_colo
             style_pre0 = np.array([vgg.preprocess(styles[0], vgg_mean_pixel)])
             style_pre1 = np.array([vgg.preprocess(styles[1], vgg_mean_pixel)])
             style_pre2 = np.array([vgg.preprocess(styles[2], vgg_mean_pixel)])
+
             
-            train_step.run(feed_dict={anchor_image : style_pre0, positive_image: style_pre1, negative_image: style_pre2})
-            #print loss
-            print(loss.eval(feed_dict={anchor_image : style_pre0, positive_image: style_pre1, negative_image: style_pre2}))
+            anchor, positive, negative = minibatches
+            
+            train_step.run(feed_dict={anchor_image : anchor, positive_image: positive, negative_image: negative})
+            print(loss.eval(feed_dict={anchor_image : anchor, positive_image: positive, negative_image: negative}))
 
 
             """
@@ -150,52 +131,8 @@ def stylize(network, initial, initial_noiseblend, content, styles, preserve_colo
 
             """
 
-            """
 
-            if (checkpoint_iterations and i % checkpoint_iterations == 0) or last_step:
-                this_loss = loss.eval()
-                if this_loss < best_loss:
-                    best_loss = this_loss
-                    best = image.eval()
-
-                img_out = vgg.unprocess(best.reshape(shape[1:]), vgg_mean_pixel)
-
-                if preserve_colors and preserve_colors == True:
-                    original_image = np.clip(content, 0, 255)
-                    styled_image = np.clip(img_out, 0, 255)
-
-                    # Luminosity transfer steps:
-                    # 1. Convert stylized RGB->grayscale accoriding to Rec.601 luma (0.299, 0.587, 0.114)
-                    # 2. Convert stylized grayscale into YUV (YCbCr)
-                    # 3. Convert original image into YUV (YCbCr)
-                    # 4. Recombine (stylizedYUV.Y, originalYUV.U, originalYUV.V)
-                    # 5. Convert recombined image from YUV back to RGB
-
-                    # 1
-                    styled_grayscale = rgb2gray(styled_image)
-                    styled_grayscale_rgb = gray2rgb(styled_grayscale)
-
-                    # 2
-                    styled_grayscale_yuv = np.array(Image.fromarray(styled_grayscale_rgb.astype(np.uint8)).convert('YCbCr'))
-
-                    # 3
-                    original_yuv = np.array(Image.fromarray(original_image.astype(np.uint8)).convert('YCbCr'))
-
-                    # 4
-                    w, h, _ = original_image.shape
-                    combined_yuv = np.empty((w, h, 3), dtype=np.uint8)
-                    combined_yuv[..., 0] = styled_grayscale_yuv[..., 0]
-                    combined_yuv[..., 1] = original_yuv[..., 1]
-                    combined_yuv[..., 2] = original_yuv[..., 2]
-
-                    # 5
-                    img_out = np.array(Image.fromarray(combined_yuv, 'YCbCr').convert('RGB'))
-            else:
-                img_out = None
-            """
-            #removed image out, yield i+1 if last_step else i, img_out, loss_vals
-            yield i+1 if last_step else i, loss_vals
-
+          
             iteration_end = time.time()
             iteration_times.append(iteration_end - iteration_start)
 
@@ -234,3 +171,4 @@ def hms(seconds):
         return '%d min %d sec' % (minutes, seconds)
     else:
         return '%d sec' % seconds
+

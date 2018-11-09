@@ -106,5 +106,3 @@ def main():
     print(generate_triplets("new_train_info.csv", "sample_triplet/"))
     
 
-if __name__ == "__main__":
-    main()
