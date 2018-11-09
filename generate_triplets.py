@@ -1,14 +1,21 @@
 
 import csv
 import random
+import os
 
 
-def _parse_info_file(file_path):
+def _parse_info_file(csv_file_path, paintings_file_path):
 
     '''
     Parses info file. Creates dictionary with keyword as artists and the corresponding value an 
     array of paintings, and dictionary with keyword as style and corresponding value an array of paintings.
     '''
+    file_names = []
+    
+    for root, dirs, files in os.walk(paintings_file_path):
+        for file_name in files:
+            file_names.append(file_name)
+    
 
     with open(file_path, "r") as info_file:
 
@@ -27,6 +34,9 @@ def _parse_info_file(file_path):
             artist_name = row[artist_index]
             style_name = row[style_index]
             file_name = row[filename_index]
+
+            if file_name not in file_names:
+                continue
             
             artist_dict_info = [file_name, style_name]
             style_dict_info = [file_name, artist_name]
