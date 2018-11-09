@@ -12,12 +12,11 @@ def _parse_info_file(csv_file_path, paintings_file_path):
     '''
     file_names = []
     
-    for root, dirs, files in os.walk(paintings_file_path):
-        for file_name in files:
-            file_names.append(file_name)
     
+    file_names = os.listdir(paintings_file_path)
 
-    with open(file_path, "r") as info_file:
+
+    with open(csv_file_path, "r") as info_file:
 
         info_reader = csv.reader(info_file, dialect="excel", delimiter=",", quotechar="\"")
 
@@ -54,13 +53,13 @@ def _parse_info_file(csv_file_path, paintings_file_path):
         
     return artist_dict, style_dict
 
-def generate_triplets(file_path):
+def generate_triplets(file_path, data_path):
 
     '''
     Generates triplets from .cvs file in file_path.
     '''
 
-    artist_dict, style_dict = _parse_info_file(file_path)
+    artist_dict, style_dict = _parse_info_file(file_path, data_path)
     triplet_array = []
 
     
@@ -104,7 +103,7 @@ def generate_triplets(file_path):
 
 def main():
 
-    print(generate_triplets("test.csv"))
+    print(generate_triplets("new_train_info.csv", "sample_triplet/"))
     
 
 if __name__ == "__main__":

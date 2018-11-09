@@ -6,6 +6,7 @@ import shutil
 from PIL.Image import LANCZOS
 from PIL.ImageOps import fit
 from keras.preprocessing.image import load_img
+from generate_triplets import *
 
 IMGS_DIM_2D = (224, 224)
 PREPROCESSED_IMAGE_DIR = "preprocessed_images"
@@ -61,4 +62,4 @@ def _create_preprocessed_triplet(source, num, triplet):
 
 
 if __name__ == "__main__":
-    generate_preprocessed_images(sys.argv[1], [["10152.jpg", "10319.jpg", "10329.jpg"], ["10319.jpg", "10329.jpg", "10152.jpg"], ["10329.jpg", "10152.jpg", "10319.jpg"]])
+    generate_preprocessed_images(sys.argv[1], generate_triplets("new_train_info.csv", sys.argv[1]))
