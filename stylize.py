@@ -10,6 +10,8 @@ import tensorflow as tf
 
 import vgg
 
+from load_images import *
+
 
 STYLE_LAYERS = ('relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1')
 
@@ -47,8 +49,7 @@ def stylize(network, initial, initial_noiseblend, content, styles, preserve_colo
     :rtype: iterator[tuple[int,image]]
     """
     
-    minibatches = np.array([[styles[0], styles[1], styles[2]], [styles[3], styles[4], styles[5]], [styles[6], styles[7], styles[8]]])
-    minibatch_size = 3
+    minibatch_size = 16
     
     shape = (1,) + content.shape
     style_shapes = [(1,) + style.shape for style in styles]
@@ -85,6 +86,9 @@ def stylize(network, initial, initial_noiseblend, content, styles, preserve_colo
     # optimizer setup
     train_step = tf.train.AdamOptimizer(learning_rate, beta1, beta2, epsilon).minimize(loss)
 
+    # Initialize image loader
+    image_loader = Image_Loader('preprocessed_images/', minibatch_size)
+    
     # optimization
     best_loss = float('inf')
     best = None
@@ -114,8 +118,11 @@ def stylize(network, initial, initial_noiseblend, content, styles, preserve_colo
             style_pre1 = np.array([vgg.preprocess(styles[1], vgg_mean_pixel)])
             style_pre2 = np.array([vgg.preprocess(styles[2], vgg_mean_pixel)])
 
-            
-            anchor, positive, negative = minibatches
+            anchor, positive, negative = np.array(image_loader.load_next_batch())
+
+            anchor = np.array([vgg.preprocess(anchor, vgg_mean_pixel)])
+            positive = np.array([vgg.preprocess(positive, vgg_mean_pixel)])
+            negative = np.array([vgg.preprocess(negative, vgg_mean_pixel)])
             
             train_step.run(feed_dict={anchor_image : anchor, positive_image: positive, negative_image: negative})
             print(loss.eval(feed_dict={anchor_image : anchor, positive_image: positive, negative_image: negative}))

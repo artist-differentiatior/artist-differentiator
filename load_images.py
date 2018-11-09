@@ -1,5 +1,4 @@
 import numpy as np
-import cv2
 import math
 import sys
 
@@ -12,29 +11,37 @@ class Image_Loader(object):
         self.__image_source = image_source
         try:
             self.__images = listdir(self.__image_source)
+            self.__images.sort()
         except Exception as e:
             print(e)
         self.__mini_batch = 0
-        self.__mini_batch_size = mini_batch_size
-        self.__num_mini_batches = int(math.ceil(len(self.__images) / float(self.__mini_batch_size)))
+        self.__total_mini_batch_size = 3*mini_batch_size
+        self.__num_mini_batches = int(math.ceil(len(self.__images) / float(self.__total_mini_batch_size)))
 
     def load_next_batch(self):
 
-        start_im = self.__mini_batch * self.__mini_batch_size
-        end_im = min((self.__mini_batch + 1) * self.__mini_batch_size, len(self.__images))
-        print(start_im, end_im)
+        start_im = self.__mini_batch * self.__total_mini_batch_size
+        end_im = min((self.__mini_batch + 1) * self.__total_mini_batch_size, len(self.__images))
 
-        images = []
+        anchors = []
+        negatives = []
+        positives = []
 
-        for i in range(start_im, end_im):
-            filename = self.__image_source + "/" + self.__images[i]
-            #image = imread(filename).astype(np.float)
-            image = cv2.imread(filename)
-            images.append(image)
+        for i in range(start_im, end_im, 3):
+            anchor_filename = self.__image_source + "/" + self.__images[i]
+            negative_filename = self.__image_source + "/" + self.__images[i+1]
+            positive_filename = self.__image_source + "/" + self.__images[i+2]
+            anchor_image = imread(anchor_filename).astype(np.float)
+            negative_image = imread(negative_filename).astype(np.float)
+            positive_image = imread(positive_filename).astype(np.float)
+            #image = cv2.imread(filename)
+            anchors.append(anchor_image)
+            negatives.append(negative_image)
+            positives.append(positive_image)
 
         self.__mini_batch = (self.__mini_batch + 1) % self.__num_mini_batches
 
-        return images
+        return anchors, positives, negatives
 
 
 if __name__ == "__main__":

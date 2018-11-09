@@ -56,6 +56,9 @@ def _create_preprocessed_triplet(source, num, triplet):
     positive = fit(positive, IMGS_DIM_2D, method=LANCZOS)
     negative = fit(negative, IMGS_DIM_2D, method=LANCZOS)
 
+    if num < 10:
+        num = '0' + str(num)
+
     anchor.save(PREPROCESSED_IMAGE_DIR + "/" + str(num) + "_A-" + triplet[0])
     positive.save(PREPROCESSED_IMAGE_DIR + "/" + str(num) + "_P-" + triplet[1])
     negative.save(PREPROCESSED_IMAGE_DIR + "/" + str(num) + "_N-" + triplet[2])
