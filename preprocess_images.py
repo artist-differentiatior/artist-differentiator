@@ -10,7 +10,8 @@ from keras.preprocessing.image import load_img
 IMGS_DIM_2D = (224, 224)
 PREPROCESSED_IMAGE_DIR = "preprocessed_images"
 
-def generate_preprocessed_images(source):
+
+def generate_preprocessed_images(source, triplet_array):
     dir_path = os.path.dirname(os.path.realpath(__file__))
     if os.path.exists(PREPROCESSED_IMAGE_DIR):
         buffer = raw_input("The folder: " + dir_path + "/" + PREPROCESSED_IMAGE_DIR + " already exist." + \
@@ -24,30 +25,40 @@ def generate_preprocessed_images(source):
     dir_path = os.path.dirname(os.path.realpath(__file__))
     os.makedirs(PREPROCESSED_IMAGE_DIR)
     print("Create folder: " + dir_path + "/" + PREPROCESSED_IMAGE_DIR)
-    _preprocesse_images(source)
+    _preprocesse_images(source, triplet_array)
 
-def _preprocesse_images(source):
-    source_dir = os.listdir(source)
-    print("Create new images")
 
-    count = 0
-    output = "Images created %s/%s" %(count, len(source_dir))
+def _preprocesse_images(source, triplet_array):
+
+    output = "Triplets created: %s/%s" %(0, len(triplet_array))
     sys.stdout.write(output)
     sys.stdout.flush()
 
-    for image_name in source_dir:
-        _create_preprocessed_image(source, image_name)
+    for counter, triplet in enumerate(triplet_array):
+        _create_preprocessed_triplet(source, counter + 1, triplet)
+
+        #Write progress
         sys.stdout.write("\b" * len(output))
-        count += 1
-        output = "Images created %s/%s" %(count, len(source_dir))
+        output = "Triplets created: %s/%s" %(counter + 1, len(triplet_array))
         sys.stdout.write(output)
         sys.stdout.flush()
+
     print("\nFinished creating images")
 
-def _create_preprocessed_image(source, name):
-    image = load_img(source + name)
-    image = fit(image, IMGS_DIM_2D, method=LANCZOS)
-    image.save(PREPROCESSED_IMAGE_DIR + "/" + name)
+
+def _create_preprocessed_triplet(source, num, triplet):
+    anchor = load_img(source + triplet[0])
+    positive = load_img(source + triplet[1])
+    negative = load_img(source + triplet[2])
+
+    anchor = fit(anchor, IMGS_DIM_2D, method=LANCZOS)
+    positive = fit(positive, IMGS_DIM_2D, method=LANCZOS)
+    negative = fit(negative, IMGS_DIM_2D, method=LANCZOS)
+
+    anchor.save(PREPROCESSED_IMAGE_DIR + "/" + str(num) + "_A-" + triplet[0])
+    positive.save(PREPROCESSED_IMAGE_DIR + "/" + str(num) + "_P-" + triplet[1])
+    negative.save(PREPROCESSED_IMAGE_DIR + "/" + str(num) + "_N-" + triplet[2])
+
 
 if __name__ == "__main__":
-    generate_preprocessed_images(sys.argv[1])
+    generate_preprocessed_images(sys.argv[1], [["10152.jpg", "10319.jpg", "10329.jpg"], ["10319.jpg", "10329.jpg", "10152.jpg"], ["10329.jpg", "10152.jpg", "10319.jpg"]])
