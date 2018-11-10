@@ -50,24 +50,20 @@ def train_nn(network, iterations, learning_rate, beta1, beta2, epsilon, batch_si
 
     dist_p = tf.add_n([tf.reduce_sum((anchor_styles[layer] - positive_styles[layer]) ** 2,[1,2]) for layer in STYLE_LAYERS])
     dist_n = tf.add_n([tf.reduce_sum((anchor_styles[layer] - negative_styles[layer]) ** 2,[1,2]) for layer in STYLE_LAYERS])
-    temp = tf.maximum(dist_p - dist_n, 0)
-    loss = tf.reduce_sum(temp) / batch_size
-    
-    #debug, should be equal to l2 loss
-    #dist_p = tf.reduce_sum(dist_p2) / 2
-    #dist_n = tf.reduce_sum(dist_n2) / 2
-    
-    #old loss
-    #dist_p = tf.add_n([tf.nn.l2_loss(anchor_styles[layer] - positive_styles[layer]) for layer in STYLE_LAYERS]) / batch_size
-    #dist_n = tf.add_n([tf.nn.l2_loss(anchor_styles[layer] - negative_styles[layer]) for layer in STYLE_LAYERS]) / batch_size
-    #loss = (dist_p - dist_n)
+    max_sum = tf.maximum(dist_p - dist_n + loss_threshold, 0)
+    loss = tf.reduce_sum(max_sum) / batch_size
 
     # optimizer setup
     train_step = tf.train.AdamOptimizer(learning_rate, beta1, beta2, epsilon).minimize(loss)
 
     # Initialize image loader
     image_loader = Image_Loader('preprocessed_images/', batch_size)
-    anchor, positive, negative = np.array(image_loader.load_next_batch())
+
+    #use just 1 batch
+    #anchor, positive, negative = np.array(image_loader.load_next_batch())
+    #anchor = vgg.preprocess(anchor, vgg_mean_pixel)
+    #negative = vgg.preprocess(positive, vgg_mean_pixel)
+    #positive = vgg.preprocess(negative, vgg_mean_pixel)
 
     saver = tf.train.Saver()
 
@@ -104,7 +100,7 @@ def train_nn(network, iterations, learning_rate, beta1, beta2, epsilon, batch_si
             else:
                 print('Iteration %4d/%4d' % (i + 1, iterations))
             
-            #anchor, positive, negative = np.array(image_loader.load_next_batch())
+            anchor, positive, negative = image_loader.load_next_batch()
 
             anchor = vgg.preprocess(anchor, vgg_mean_pixel)
             negative = vgg.preprocess(positive, vgg_mean_pixel)
