@@ -5,7 +5,7 @@ import os
 import numpy as np
 import scipy.misc
 
-from stylize import stylize
+from train_nn import train_nn
 
 import math
 from argparse import ArgumentParser
@@ -29,49 +29,12 @@ POOLING = 'max'
 
 def build_parser():
     parser = ArgumentParser()
-    parser.add_argument('--output',
-            dest='output', help='output path',
-            metavar='OUTPUT', required=True)
     parser.add_argument('--iterations', type=int,
             dest='iterations', help='iterations (default %(default)s)',
             metavar='ITERATIONS', default=ITERATIONS)
-    parser.add_argument('--print-iterations', type=int,
-            dest='print_iterations', help='statistics printing frequency',
-            metavar='PRINT_ITERATIONS')
-    parser.add_argument('--checkpoint-output',
-            dest='checkpoint_output', help='checkpoint output format, e.g. output%%s.jpg',
-            metavar='OUTPUT')
-    parser.add_argument('--checkpoint-iterations', type=int,
-            dest='checkpoint_iterations', help='checkpoint frequency',
-            metavar='CHECKPOINT_ITERATIONS')
-    parser.add_argument('--width', type=int,
-            dest='width', help='output width',
-            metavar='WIDTH')
-    parser.add_argument('--style-scales', type=float,
-            dest='style_scales',
-            nargs='+', help='one or more style scales',
-            metavar='STYLE_SCALE')
     parser.add_argument('--network',
             dest='network', help='path to network parameters (default %(default)s)',
             metavar='VGG_PATH', default=VGG_PATH)
-    parser.add_argument('--content-weight-blend', type=float,
-            dest='content_weight_blend', help='content weight blend, conv4_2 * blend + conv5_2 * (1-blend) (default %(default)s)',
-            metavar='CONTENT_WEIGHT_BLEND', default=CONTENT_WEIGHT_BLEND)
-    parser.add_argument('--content-weight', type=float,
-            dest='content_weight', help='content weight (default %(default)s)',
-            metavar='CONTENT_WEIGHT', default=CONTENT_WEIGHT)
-    parser.add_argument('--style-weight', type=float,
-            dest='style_weight', help='style weight (default %(default)s)',
-            metavar='STYLE_WEIGHT', default=STYLE_WEIGHT)
-    parser.add_argument('--style-layer-weight-exp', type=float,
-            dest='style_layer_weight_exp', help='style layer weight exponentional increase - weight(layer<n+1>) = weight_exp*weight(layer<n>) (default %(default)s)',
-            metavar='STYLE_LAYER_WEIGHT_EXP', default=STYLE_LAYER_WEIGHT_EXP)
-    parser.add_argument('--style-blend-weights', type=float,
-            dest='style_blend_weights', help='style blending weights',
-            nargs='+', metavar='STYLE_BLEND_WEIGHT')
-    parser.add_argument('--tv-weight', type=float,
-            dest='tv_weight', help='total variation regularization weight (default %(default)s)',
-            metavar='TV_WEIGHT', default=TV_WEIGHT)
     parser.add_argument('--learning-rate', type=float,
             dest='learning_rate', help='learning rate (default %(default)s)',
             metavar='LEARNING_RATE', default=LEARNING_RATE)
@@ -84,19 +47,12 @@ def build_parser():
     parser.add_argument('--eps', type=float,
             dest='epsilon', help='Adam: epsilon parameter (default %(default)s)',
             metavar='EPSILON', default=EPSILON)
-    parser.add_argument('--initial',
-            dest='initial', help='initial image',
-            metavar='INITIAL')
-    parser.add_argument('--initial-noiseblend', type=float,
-            dest='initial_noiseblend', help='ratio of blending initial image with normalized noise (if no initial image specified, content image is used) (default %(default)s)',
-            metavar='INITIAL_NOISEBLEND')
-    parser.add_argument('--preserve-colors', action='store_true',
-            dest='preserve_colors', help='style-only transfer (preserving colors) - if color transfer is not needed')
     parser.add_argument('--pooling',
             dest='pooling', help='pooling layer configuration: max or avg (default %(default)s)',
             metavar='POOLING', default=POOLING)
-    parser.add_argument('--overwrite', action='store_true',
-            dest='overwrite', help='write file even if there is already a file with that name')
+    parser.add_argument('--mini_batch_size', type=int,
+            dest='mini_batch_size', help='mini batch size',
+            metavar='MINI_BATCH_SIZE', default=4)
     return parser
 
 
@@ -107,7 +63,7 @@ def main():
     if not os.path.isfile(options.network):
         parser.error("Network %s does not exist. (Did you forget to download it?)" % options.network)
 
-    for iteration, image in stylize(
+    train_nn(
         network=options.network,
         iterations=options.iterations,
         learning_rate=options.learning_rate,
@@ -115,33 +71,8 @@ def main():
         beta2=options.beta2,
         epsilon=options.epsilon,
         pooling=options.pooling,
-        print_iterations=options.print_iterations
-    ):
-        output_file = None
-        combined_rgb = image
-        if iteration is not None:
-            if options.checkpoint_output:
-                output_file = options.checkpoint_output % iteration
-        else:
-            output_file = options.output
-        if output_file:
-            imsave(output_file, combined_rgb)
-
-
-def imread(path):
-    img = scipy.misc.imread(path).astype(np.float)
-    if len(img.shape) == 2:
-        # grayscale
-        img = np.dstack((img,img,img))
-    elif img.shape[2] == 4:
-        # PNG with alpha channel
-        img = img[:,:,:3]
-    return img
-
-
-def imsave(path, img):
-    img = np.clip(img, 0, 255).astype(np.uint8)
-    Image.fromarray(img).save(path, quality=95)
+        batch_size=options.mini_batch_size
+    )
 
 if __name__ == '__main__':
     main()

@@ -34,7 +34,6 @@ class Image_Loader(object):
             anchor_image = imread(anchor_filename).astype(np.float)
             negative_image = imread(negative_filename).astype(np.float)
             positive_image = imread(positive_filename).astype(np.float)
-            #image = cv2.imread(filename)
             anchors.append(anchor_image)
             negatives.append(negative_image)
             positives.append(positive_image)

@@ -13,6 +13,16 @@ PREPROCESSED_IMAGE_DIR = "preprocessed_images"
 
 
 def generate_preprocessed_images(source, triplet_array):
+
+    """
+    Copies images from the source folder and rescale them to size 224x224. These
+    images are then grouped into triplets and saved into the folder: preprocessed_images
+
+    Args: 
+        source: (str) path to source directory
+        triplet_array: (array) determine how triplets are grouped together
+    """
+
     dir_path = os.path.dirname(os.path.realpath(__file__))
     if os.path.exists(PREPROCESSED_IMAGE_DIR):
         buffer = raw_input("The folder: " + dir_path + "/" + PREPROCESSED_IMAGE_DIR + " already exist." + \
@@ -31,6 +41,14 @@ def generate_preprocessed_images(source, triplet_array):
 
 def _preprocesse_images(source, triplet_array):
 
+    """
+    
+
+    Args: 
+        source: (str) path to source directory
+        triplet_array: (array) determine how triplets are grouped together
+    """
+
     output = "Triplets created: %s/%s" %(0, len(triplet_array))
     sys.stdout.write(output)
     sys.stdout.flush()
@@ -48,6 +66,14 @@ def _preprocesse_images(source, triplet_array):
 
 
 def _create_preprocessed_triplet(source, num, triplet):
+    """
+    Copies and resizea a triplet from source folder
+
+    Args: 
+        source: (str) path to source directory
+        num: (int) triplet number
+        triplet: (array) determine which files in source directory to use as triplet
+    """
     anchor = load_img(source + triplet[0])
     positive = load_img(source + triplet[1])
     negative = load_img(source + triplet[2])

@@ -1,5 +1,3 @@
-# Copyright (c) 2015-2018 Anish Athalye. Released under GPLv3.
-
 import os
 import time
 from collections import OrderedDict
@@ -12,27 +10,11 @@ import vgg
 
 from load_images import *
 
-
-#STYLE_LAYERS = ('relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1')
 STYLE_LAYERS = ('relu1_1', 'relu2_1')
+#STYLE_LAYERS = ('relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1')
 
 
-try:
-    reduce
-except NameError:
-    from functools import reduce
-
-
-def get_loss_vals(loss_store):
-    return OrderedDict((key, val.eval()) for key,val in loss_store.items())
-
-
-def print_progress(loss_vals):
-    for key,val in loss_vals.items():
-        print('{:>13s} {:g}'.format(key + ' loss:', val))
-
-
-def stylize(network, iterations, learning_rate, beta1, beta2, epsilon, pooling, print_iterations=None, batch_size=8):
+def train_nn(network, iterations, learning_rate, beta1, beta2, epsilon, pooling, print_iterations=None, batch_size=2):
 
     vgg_weights, vgg_mean_pixel = vgg.load_net(network)
 
@@ -55,24 +37,29 @@ def stylize(network, iterations, learning_rate, beta1, beta2, epsilon, pooling, 
 
     loss_threshold = 1000000000
 
-    dist_p = tf.add_n([tf.nn.l2_loss(anchor_styles[layer] - positive_styles[layer]) for layer in STYLE_LAYERS])
-    dist_n = tf.add_n([tf.nn.l2_loss(anchor_styles[layer] - negative_styles[layer]) for layer in STYLE_LAYERS])
-    loss = dist_p - dist_n
+    dist_p = tf.add_n([tf.nn.l2_loss(anchor_styles[layer] - positive_styles[layer]) for layer in STYLE_LAYERS]) / batch_size
+    dist_n = tf.add_n([tf.nn.l2_loss(anchor_styles[layer] - negative_styles[layer]) for layer in STYLE_LAYERS]) / batch_size
+    loss = (dist_p - dist_n)
 
     # optimizer setup
     train_step = tf.train.AdamOptimizer(learning_rate, beta1, beta2, epsilon).minimize(loss)
 
     # Initialize image loader
     image_loader = Image_Loader('preprocessed_images/', batch_size)
+    anchor, positive, negative = np.array(image_loader.load_next_batch())
     
-    # optimization
-    best_loss = float('inf')
-    best = None
+    saver = tf.train.Saver()
+
     with tf.Session() as sess:
-        sess.run(tf.global_variables_initializer())
+
+        try:
+            saver.restore(sess, "/home/albin/artist-differentiator/save/model.ckpt")
+            print("Restored weights")
+        except ValueError:
+            print("Could not load .ckpt file")
+            sess.run(tf.global_variables_initializer())
+
         print('Optimization started...')
-        if (print_iterations and print_iterations != 0):
-            print_progress(get_loss_vals(loss_store))
         iteration_times = []
         start = time.time()
         for i in range(iterations):
@@ -89,8 +76,8 @@ def stylize(network, iterations, learning_rate, beta1, beta2, epsilon, pooling, 
                 ))
             else:
                 print('Iteration %4d/%4d' % (i + 1, iterations))
-
-            anchor, positive, negative = np.array(image_loader.load_next_batch())
+            
+            #anchor, positive, negative = np.array(image_loader.load_next_batch())
 
             anchor = vgg.preprocess(anchor, vgg_mean_pixel)
             negative = vgg.preprocess(positive, vgg_mean_pixel)
@@ -98,19 +85,10 @@ def stylize(network, iterations, learning_rate, beta1, beta2, epsilon, pooling, 
 
             _, cost, cost2 = sess.run([train_step, dist_p, dist_n], feed_dict={anchor_image : anchor, positive_image: positive, negative_image: negative})
             print(cost, cost2)
-            #train_step.run(feed_dict={anchor_image : anchor, positive_image: positive, negative_image: negative})
-            #cost = sess.run([dist], feed_dict={anchor_image : anchor, positive_image: negative, negative_image: positive})
 
-            """
-            last_step = (i == iterations - 1)
-            if last_step or (print_iterations and i % print_iterations == 0):
-                loss_vals = get_loss_vals(loss_store)
-                print_progress(loss_vals)
-            else:
-                loss_vals = None
-
-            """
-
+            if (i + 1) % 5 == 0:
+                save_path = saver.save(sess, "/home/albin/artist-differentiator/save/model.ckpt")
+                print("Model saved in path: %s" % save_path)
 
           
             iteration_end = time.time()
