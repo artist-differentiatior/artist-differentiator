@@ -56,7 +56,6 @@ def train_nn(network, iterations, learning_rate, beta1, beta2, epsilon, batch_si
 
     # Initialize image loader
     image_loader = Image_Loader('preprocessed_images/', batch_size)
-    anchor, positive, negative = np.array(image_loader.load_next_batch())
 
     saver = tf.train.Saver()
 
@@ -93,7 +92,7 @@ def train_nn(network, iterations, learning_rate, beta1, beta2, epsilon, batch_si
             else:
                 print('Iteration %4d/%4d' % (i + 1, iterations))
             
-            #anchor, positive, negative = np.array(image_loader.load_next_batch())
+            anchor, positive, negative = np.array(image_loader.load_next_batch())
 
             anchor = vgg.preprocess(anchor, vgg_mean_pixel)
             negative = vgg.preprocess(positive, vgg_mean_pixel)
