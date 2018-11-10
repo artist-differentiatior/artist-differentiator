@@ -56,6 +56,7 @@ def train_nn(network, iterations, learning_rate, beta1, beta2, epsilon, batch_si
 
     # Initialize image loader
     image_loader = Image_Loader('preprocessed_images/', batch_size)
+    #anchor, positive, negative = np.array(image_loader.load_next_batch())
 
     saver = tf.train.Saver()
 
