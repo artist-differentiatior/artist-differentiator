@@ -47,9 +47,6 @@ def build_parser():
     parser.add_argument('--eps', type=float,
             dest='epsilon', help='Adam: epsilon parameter (default %(default)s)',
             metavar='EPSILON', default=EPSILON)
-    parser.add_argument('--pooling',
-            dest='pooling', help='pooling layer configuration: max or avg (default %(default)s)',
-            metavar='POOLING', default=POOLING)
     parser.add_argument('--mini_batch_size', type=int,
             dest='mini_batch_size', help='mini batch size',
             metavar='MINI_BATCH_SIZE', default=4)
@@ -70,7 +67,6 @@ def main():
         beta1=options.beta1,
         beta2=options.beta2,
         epsilon=options.epsilon,
-        pooling=options.pooling,
         batch_size=options.mini_batch_size
     )
 

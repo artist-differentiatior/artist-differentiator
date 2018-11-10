@@ -9,12 +9,14 @@ def _parse_info_file(csv_file_path, paintings_file_path):
     '''
     Parses info file. Creates dictionary with keyword as artists and the corresponding value an 
     array of paintings, and dictionary with keyword as style and corresponding value an array of paintings.
+
+    Args:
+        csv_file_path: (str) path to csv file containing info about dataset
+        paintings_file_path: (str) path to directory containing dataset
     '''
     file_names = []
     
-    
     file_names = os.listdir(paintings_file_path)
-
 
     with open(csv_file_path, "r") as info_file:
 
@@ -53,13 +55,17 @@ def _parse_info_file(csv_file_path, paintings_file_path):
         
     return artist_dict, style_dict
 
-def generate_triplets(file_path, data_path):
+def generate_triplets(csv_file_path, paintings_file_path):
 
     '''
-    Generates triplets from .cvs file in file_path.
+    Generates triplets from .cvs file in csv_file_path.
+
+    Args:
+        csv_file_path: (str) path to csv file containing info about dataset
+        paintings_file_path: (str) path to directory containing dataset
     '''
 
-    artist_dict, style_dict = _parse_info_file(file_path, data_path)
+    artist_dict, style_dict = _parse_info_file(csv_file_path, paintings_file_path)
     triplet_array = []
 
     

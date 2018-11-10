@@ -49,7 +49,7 @@ def load_net(data_path):
     return weights, mean_pixel
 
 
-def net_preloaded(weights, input_image, pooling):
+def net_preloaded(weights, input_image):
     """
     Generates layers of VGG net.
     """
@@ -68,7 +68,7 @@ def net_preloaded(weights, input_image, pooling):
         elif kind == 'relu':
             current = tf.nn.relu(current)
         elif kind == 'pool':
-            current = _pool_layer(current, pooling)
+            current = _pool_layer(current)
         net[name] = current
 
     assert len(net) == len(VGG19_LAYERS)
@@ -83,13 +83,9 @@ def _conv_layer(input, weights, bias, layer_name):
     return tf.nn.bias_add(conv, bias)
 
 
-def _pool_layer(input, pooling):
-    if pooling == 'avg':
-        return tf.nn.avg_pool(input, ksize=(1, 2, 2, 1), strides=(1, 2, 2, 1),
-                padding='SAME')
-    else:
-        return tf.nn.max_pool(input, ksize=(1, 2, 2, 1), strides=(1, 2, 2, 1),
-                padding='SAME')
+def _pool_layer(input):
+    return tf.nn.max_pool(input, ksize=(1, 2, 2, 1), strides=(1, 2, 2, 1),
+            padding='SAME')
 
 def preprocess(image, mean_pixel):
     return image - mean_pixel

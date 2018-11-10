@@ -42,6 +42,7 @@ def generate_preprocessed_images(source, triplet_array):
 def _preprocesse_images(source, triplet_array):
 
     """
+    Iterated through triplet_array and copies triplets into: preprocessed_images
     
 
     Args: 
@@ -67,7 +68,7 @@ def _preprocesse_images(source, triplet_array):
 
 def _create_preprocessed_triplet(source, num, triplet):
     """
-    Copies and resizea a triplet from source folder
+    Copies and resizes a triplet from source folder
 
     Args: 
         source: (str) path to source directory
