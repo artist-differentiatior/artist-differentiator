@@ -45,11 +45,22 @@ def train_nn(network, iterations, learning_rate, beta1, beta2, epsilon, batch_si
     positive_styles = _generate_style(positive_net, STYLE_LAYERS)
     negative_styles = _generate_style(negative_net, STYLE_LAYERS)
 
-    #loss_threshold = 1000000000
+    
+    loss_threshold = 1000000
 
-    dist_p = tf.add_n([tf.nn.l2_loss(anchor_styles[layer] - positive_styles[layer]) for layer in STYLE_LAYERS]) / batch_size
-    dist_n = tf.add_n([tf.nn.l2_loss(anchor_styles[layer] - negative_styles[layer]) for layer in STYLE_LAYERS]) / batch_size
-    loss = (dist_p - dist_n)
+    dist_p = tf.add_n([tf.reduce_sum((anchor_styles[layer] - positive_styles[layer]) ** 2,[1,2]) for layer in STYLE_LAYERS])
+    dist_n = tf.add_n([tf.reduce_sum((anchor_styles[layer] - negative_styles[layer]) ** 2,[1,2]) for layer in STYLE_LAYERS])
+    temp = tf.maximum(dist_p - dist_n, 0)
+    loss = tf.reduce_sum(temp) / batch_size
+    
+    #debug, should be equal to l2 loss
+    #dist_p = tf.reduce_sum(dist_p2) / 2
+    #dist_n = tf.reduce_sum(dist_n2) / 2
+    
+    #old loss
+    #dist_p = tf.add_n([tf.nn.l2_loss(anchor_styles[layer] - positive_styles[layer]) for layer in STYLE_LAYERS]) / batch_size
+    #dist_n = tf.add_n([tf.nn.l2_loss(anchor_styles[layer] - negative_styles[layer]) for layer in STYLE_LAYERS]) / batch_size
+    #loss = (dist_p - dist_n)
 
     # optimizer setup
     train_step = tf.train.AdamOptimizer(learning_rate, beta1, beta2, epsilon).minimize(loss)
@@ -99,8 +110,8 @@ def train_nn(network, iterations, learning_rate, beta1, beta2, epsilon, batch_si
             negative = vgg.preprocess(positive, vgg_mean_pixel)
             positive = vgg.preprocess(negative, vgg_mean_pixel)
 
-            _, cost, cost2 = sess.run([train_step, dist_p, dist_n], feed_dict={anchor_image : anchor, positive_image: positive, negative_image: negative})
-            print(cost, cost2)
+            _, cost = sess.run([train_step, loss], feed_dict={anchor_image : anchor, positive_image: positive, negative_image: negative})
+            print(cost)
 
             #TODO: save model
 
