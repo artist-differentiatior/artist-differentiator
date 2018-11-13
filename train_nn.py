@@ -73,14 +73,14 @@ def train_nn(network, iterations, learning_rate, beta1, beta2, epsilon, batch_si
 
 
         #TODO: restore model
-        """
+        
         try:
-            saver.restore(sess, "/home/albin/artist-differentiator/save/model.ckpt")
+            saver.restore(sess, "./save/model.ckpt")
             print("Restored weights")
         except ValueError:
             print("Could not load .ckpt file")
             sess.run(tf.global_variables_initializer())
-        """
+        
 
         print('Optimization started...')
         iteration_times = []
@@ -111,11 +111,10 @@ def train_nn(network, iterations, learning_rate, beta1, beta2, epsilon, batch_si
 
             #TODO: save model
 
-            """
+            
             if (i + 1) % 5 == 0:
-                save_path = saver.save(sess, "/home/albin/artist-differentiator/save/model.ckpt")
+                save_path = saver.save(sess, "./save/model.ckpt")
                 print("Model saved in path: %s" % save_path)
-            """
           
             iteration_end = time.time()
             iteration_times.append(iteration_end - iteration_start)
