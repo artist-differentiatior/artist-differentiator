@@ -21,7 +21,7 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, batch_size=2
     Trains the neural net using triplet loss
 
     Args: 
-        network: (?) pretrained neural network
+        network: (str) filepath to pretrained network parameters
         epochs: (int) number of training epochs
         learning_rate: (float) learning rate
         beta1: (float) momentum parameter for adam optimizer
