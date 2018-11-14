@@ -23,15 +23,15 @@ BETA1 = 0.9
 BETA2 = 0.999
 EPSILON = 1e-08
 STYLE_SCALE = 1.0
-ITERATIONS = 1000
+EPOCHS = 1000
 VGG_PATH = 'imagenet-vgg-verydeep-19.mat'
 POOLING = 'max'
 
 def build_parser():
     parser = ArgumentParser()
-    parser.add_argument('--iterations', type=int,
-            dest='iterations', help='iterations (default %(default)s)',
-            metavar='ITERATIONS', default=ITERATIONS)
+    parser.add_argument('--epochs', type=int,
+            dest='epochs', help='epochs (default %(default)s)',
+                        metavar='EPOCHS', default=EPOCHS)
     parser.add_argument('--network',
             dest='network', help='path to network parameters (default %(default)s)',
             metavar='VGG_PATH', default=VGG_PATH)
@@ -62,7 +62,7 @@ def main():
 
     train_nn(
         network=options.network,
-        iterations=options.iterations,
+        epochs=options.epochs,
         learning_rate=options.learning_rate,
         beta1=options.beta1,
         beta2=options.beta2,

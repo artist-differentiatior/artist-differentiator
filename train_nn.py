@@ -1,6 +1,7 @@
 import os
 import time
 from collections import OrderedDict
+from progress.bar import Bar
 
 from PIL import Image
 import numpy as np
@@ -14,14 +15,14 @@ STYLE_LAYERS = ('relu1_1', 'relu2_1')
 #STYLE_LAYERS = ('relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1')
 
 
-def train_nn(network, iterations, learning_rate, beta1, beta2, epsilon, batch_size=2):
+def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, batch_size=2):
 
     """
     Trains the neural net using triplet loss
 
     Args: 
         network: (?) pretrained neural network
-        iterations: (int) number of training iterations
+        epochs: (int) number of training epochs
         learning_rate: (float) learning rate
         beta1: (float) momentum parameter for adam optimizer
         beta2: (float) RMSprop parameter for adam optimizer
@@ -57,7 +58,7 @@ def train_nn(network, iterations, learning_rate, beta1, beta2, epsilon, batch_si
     train_step = tf.train.AdamOptimizer(learning_rate, beta1, beta2, epsilon).minimize(loss)
 
     # Initialize image loader
-    image_loader = Image_Loader('preprocessed_images/', batch_size)
+    image_loader = Image_Loader('./preprocessed_images/', batch_size)
 
     #use just 1 batch
     #anchor, positive, negative = np.array(image_loader.load_next_batch())
@@ -67,15 +68,15 @@ def train_nn(network, iterations, learning_rate, beta1, beta2, epsilon, batch_si
 
     saver = tf.train.Saver()
 
+
     with tf.Session() as sess:
 
         sess.run(tf.global_variables_initializer())
 
 
-        #TODO: restore model
         
         try:
-            saver.restore(sess, "./save/model.ckpt")
+            saver.restore(sess, "./checkpoints/model.ckpt")
             print("Restored weights")
         except ValueError:
             print("Could not load .ckpt file")
@@ -83,41 +84,39 @@ def train_nn(network, iterations, learning_rate, beta1, beta2, epsilon, batch_si
         
 
         print('Optimization started...')
-        iteration_times = []
+        epoch_times = []
         start = time.time()
-        for i in range(iterations):
-            iteration_start = time.time()
+        for i in range(epochs):
+            epoch_start = time.time()
             if i > 0:
                 elapsed = time.time() - start
                 # take average of last couple steps to get time per iteration
-                remaining = np.mean(iteration_times[-10:]) * (iterations - i)
-                print('Iteration %4d/%4d (%s elapsed, %s remaining)' % (
+                remaining = np.mean(epoch_times[-10:]) * (epochs - i)
+                print('Epoch %4d/%4d (%s elapsed, %s remaining)' % (
                     i + 1,
-                    iterations,
+                    epochs,
                     hms(elapsed),
                     hms(remaining)
                 ))
             else:
-                print('Iteration %4d/%4d' % (i + 1, iterations))
+                print('Epoch %4d/%4d' % (i + 1, epochs))
             
-            anchor, positive, negative = image_loader.load_next_batch()
+            for anchor, positive, negative in Bar('Processing minibatches...').iter(image_loader):
+                anchor = vgg.preprocess(anchor, vgg_mean_pixel)
+                negative = vgg.preprocess(positive, vgg_mean_pixel)
+                positive = vgg.preprocess(negative, vgg_mean_pixel)
 
-            anchor = vgg.preprocess(anchor, vgg_mean_pixel)
-            negative = vgg.preprocess(positive, vgg_mean_pixel)
-            positive = vgg.preprocess(negative, vgg_mean_pixel)
-
-            _, cost = sess.run([train_step, loss], feed_dict={anchor_image : anchor, positive_image: positive, negative_image: negative})
-            print(cost)
-
-            #TODO: save model
+                _, cost = sess.run([train_step, loss], feed_dict={anchor_image : anchor, positive_image: positive, negative_image: negative})
+   
+            print('Cost: %d' % cost)
 
             
             if (i + 1) % 5 == 0:
-                save_path = saver.save(sess, "./save/model.ckpt")
+                save_path = saver.save(sess, "./checkpoints/model.ckpt")
                 print("Model saved in path: %s" % save_path)
           
-            iteration_end = time.time()
-            iteration_times.append(iteration_end - iteration_start)
+            epoch_end = time.time()
+            epoch_times.append(epoch_end - epoch_start)
 
 def _generate_style(net, style_layers):
     styles = {}
