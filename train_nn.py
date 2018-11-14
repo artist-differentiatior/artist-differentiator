@@ -1,7 +1,7 @@
 import os
 import time
 from collections import OrderedDict
-from progress.bar import Bar
+from tqdm import tqdm # progressbar
 
 from PIL import Image
 import numpy as np
@@ -54,6 +54,10 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, batch_size=2
     max_sum = tf.maximum(dist_p - dist_n + loss_threshold, 0)
     loss = tf.reduce_sum(max_sum) / batch_size
 
+    # Used to compute threshold for evaluating on pairs of images
+    batch_avg_dist_AP = tf.reduce_sum(dist_p) / batch_size
+    batch_avg_dist_AN = tf.reduce_sum(dist_n) / batch_size
+
     # optimizer setup
     train_step = tf.train.AdamOptimizer(learning_rate, beta1, beta2, epsilon).minimize(loss)
 
@@ -101,7 +105,7 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, batch_size=2
             else:
                 print('Epoch %4d/%4d' % (i + 1, epochs))
             
-            for anchor, positive, negative in Bar('Processing minibatches...').iter(image_loader):
+            for anchor, positive, negative in tqdm(image_loader):
                 anchor = vgg.preprocess(anchor, vgg_mean_pixel)
                 negative = vgg.preprocess(positive, vgg_mean_pixel)
                 positive = vgg.preprocess(negative, vgg_mean_pixel)
@@ -118,6 +122,20 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, batch_size=2
             epoch_end = time.time()
             epoch_times.append(epoch_end - epoch_start)
 
+        print('Training completed. Computing mean distances...')
+
+        avg_dist_AP = 0
+        avg_dist_AN = 0
+        for anchor, positive, negative in tqdm(image_loader):
+            avg_dist_AP += sess.run(batch_avg_dist_AP, feed_dict={anchor_image : anchor, positive_image: positive, negative_image: negative})
+            avg_dist_AN += sess.run(batch_avg_dist_AN, feed_dict={anchor_image : anchor, positive_image: positive, negative_image: negative})
+            
+        avg_dist_AP = avg_dist_AP/len(image_loader)
+        avg_dist_AN = avg_dist_AN/len(image_loader)
+
+        print('Average distance A-P: %d' % avg_dist_AP)
+        print('Average distance N-P: %d' % avg_dist_AN)
+            
 def _generate_style(net, style_layers):
     styles = {}
 
