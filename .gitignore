@@ -13,3 +13,4 @@ save/
 *~
 checkpoints/
 *.mat
+*log.txt

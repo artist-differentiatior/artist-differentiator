@@ -75,7 +75,7 @@ def save_parameters(sess, extra_parameters):
     Saves the parameters trained in sess, in file 'trained_vgg_net.m'
     extra_parameters is a dictionary of additional parameters to save
     """
-    file_name = 'trained_vgg_net'
+    file_name = 'trained_vgg_net_TEST'
     
     graph = tf.get_default_graph()
     parameter_dict = {} 
