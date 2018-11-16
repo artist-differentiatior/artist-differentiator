@@ -1,4 +1,4 @@
-imagenet-vgg-verydeep-19.mat
+*.mat
 artist_differentiator
 *.pyc
 venv
@@ -12,3 +12,4 @@ sample_images
 save/
 *~
 checkpoints/
+*log.txt
