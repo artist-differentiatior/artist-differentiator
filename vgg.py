@@ -39,14 +39,15 @@ def load_net(data_path):
     """
     Loads weights from VGG. mean_pixel = ?
     """
-    
     data = scipy.io.loadmat(data_path)
     if not all(i in data for i in ('layers', 'classes', 'normalization')):
         raise ValueError("You're using the wrong VGG19 data. Please follow the instructions in the README to download the correct data.")
     mean = data['normalization'][0][0][0]
     mean_pixel = np.mean(mean, axis=(0, 1))
     weights = data['layers'][0]
+
     return weights, mean_pixel
+        
 
 
 def net_preloaded(weights, input_image):
@@ -74,13 +75,36 @@ def net_preloaded(weights, input_image):
     assert len(net) == len(VGG19_LAYERS)
     return net
 
+def save_parameters(sess, extra_parameters):
+    """
+    Saves the parameters trained in sess, in file 'trained_vgg_net.m'
+    extra_parameters is a dictionary of additional parameters to save
+    """
+    file_name = 'trained_vgg_net.m'
+    
+    graph = tf.get_default_graph()
+    parameter_dict = {} 
+    
+    for i, layer_name in enumerate(VGG19_LAYERS):
+        kind = layer_name[:4]
+        if kind == 'conv':
+            parameter_dict['w' + layer_name] = sess.run(graph.get_tensor_by_name('net/w' + layer_name + ':0'))
+            parameter_dict['b' + layer_name] = sess.run(graph.get_tensor_by_name('net/b' + layer_name + ':0'))
+
+    parameter_dict.update(extra_parameters)
+            
+    scipy.io.savemat(file_name, parameter_dict)
+
+    return file_name
+
 def _conv_layer(input, weights, bias, layer_name):
 
     w = tf.get_variable("w" + layer_name, initializer=tf.Variable(weights))
+    b = tf.get_variable("b" + layer_name, initializer=tf.Variable(bias))
     
     conv = tf.nn.conv2d(input, w, strides=(1, 1, 1, 1),
             padding='SAME')
-    return tf.nn.bias_add(conv, bias)
+    return tf.nn.bias_add(conv, b)
 
 
 def _pool_layer(input):

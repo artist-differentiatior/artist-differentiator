@@ -24,7 +24,7 @@ BETA2 = 0.999
 EPSILON = 1e-08
 STYLE_SCALE = 1.0
 EPOCHS = 1
-VGG_PATH = 'imagenet-vgg-verydeep-19.mat'
+VGG_PATH = 'vgg_net_original.mat'
 POOLING = 'max'
 
 def build_parser():
@@ -49,7 +49,7 @@ def build_parser():
             metavar='EPSILON', default=EPSILON)
     parser.add_argument('--mini_batch_size', type=int,
             dest='mini_batch_size', help='mini batch size',
-            metavar='MINI_BATCH_SIZE', default=4)
+                        metavar='MINI_BATCH_SIZE', default=4)
     return parser
 
 

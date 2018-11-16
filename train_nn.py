@@ -7,7 +7,7 @@ from PIL import Image
 import numpy as np
 import tensorflow as tf
 
-import vgg
+import trained_vgg
 
 from load_images import *
 
@@ -31,16 +31,17 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, batch_size=2
 
     """
 
-    vgg_weights, vgg_mean_pixel = vgg.load_net(network)
+    parameter_dict = trained_vgg.load_net(network)
+    vgg_mean_pixel = parameter_dict['mean_pixel']
 
     anchor_image = tf.placeholder('float', shape=(None, 224,224,3))
     positive_image = tf.placeholder('float', shape=(None, 224,224,3))
     negative_image = tf.placeholder('float', shape=(None, 224,224,3))
     
     with tf.variable_scope("net", reuse=tf.AUTO_REUSE):
-        anchor_net = vgg.net_preloaded(vgg_weights, anchor_image)
-        positive_net = vgg.net_preloaded(vgg_weights, positive_image)
-        negative_net = vgg.net_preloaded(vgg_weights, negative_image)
+        anchor_net = trained_vgg.net_preloaded(parameter_dict, anchor_image)
+        positive_net = trained_vgg.net_preloaded(parameter_dict, positive_image)
+        negative_net = trained_vgg.net_preloaded(parameter_dict, negative_image)
 
     anchor_styles = _generate_style(anchor_net, STYLE_LAYERS)
     positive_styles = _generate_style(positive_net, STYLE_LAYERS)
@@ -70,21 +71,23 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, batch_size=2
     #negative = vgg.preprocess(positive, vgg_mean_pixel)
     #positive = vgg.preprocess(negative, vgg_mean_pixel)
 
-    saver = tf.train.Saver()
+    saver = tf.train.Saver() 
 
 
     with tf.Session() as sess:
+        
 
         sess.run(tf.global_variables_initializer())
 
+        graph = tf.get_default_graph()
 
-        
-        try:
-            saver.restore(sess, "./checkpoints/model.ckpt")
-            print("Restored weights")
-        except ValueError:
-            print("Could not load .ckpt file")
-            sess.run(tf.global_variables_initializer())
+        if os.path.exists('checkpoints/model.cktp'):
+            try:
+                saver.restore(sess, "checkpoints/model.ckpt")
+                print("Restored weights from checkpoint")
+            except ValueError:
+                print("Could not load .ckpt file")
+                sess.run(tf.global_variables_initializer())
         
 
         print('Optimization started...')
@@ -106,9 +109,9 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, batch_size=2
                 print('Epoch %4d/%4d' % (i + 1, epochs))
             
             for anchor, positive, negative in tqdm(image_loader):
-                anchor = vgg.preprocess(anchor, vgg_mean_pixel)
-                negative = vgg.preprocess(positive, vgg_mean_pixel)
-                positive = vgg.preprocess(negative, vgg_mean_pixel)
+                anchor = trained_vgg.preprocess(anchor, vgg_mean_pixel)
+                negative = trained_vgg.preprocess(positive, vgg_mean_pixel)
+                positive = trained_vgg.preprocess(negative, vgg_mean_pixel)
 
                 _, cost = sess.run([train_step, loss], feed_dict={anchor_image : anchor, positive_image: positive, negative_image: negative})
    
@@ -116,7 +119,7 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, batch_size=2
 
             
             if (i + 1) % 5 == 0:
-                save_path = saver.save(sess, "./checkpoints/model.ckpt")
+                save_path = saver.save(sess, "checkpoints/model.ckpt")
                 print("Model saved in path: %s" % save_path)
           
             epoch_end = time.time()
@@ -135,6 +138,18 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, batch_size=2
 
         print('Average distance A-P: %d' % avg_dist_AP)
         print('Average distance N-P: %d' % avg_dist_AN)
+
+        # Collect extra parameters to save in .mat-file
+        extra_parameters = {}
+        extra_parameters['avg_dist_AP'] = avg_dist_AP
+        extra_parameters['avg_dist_AN'] = avg_dist_AN
+        extra_parameters['mean_pixel'] = vgg_mean_pixel
+        
+
+        print('Saving parameters...')
+        file_name = trained_vgg.save_parameters(sess, extra_parameters)
+        print('Parameters saved in: ' + file_name + '.m')
+        
             
 def _generate_style(net, style_layers):
     styles = {}
