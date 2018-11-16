@@ -7,16 +7,16 @@ from PIL import Image
 import numpy as np
 import tensorflow as tf
 
-import vgg
+import trained_vgg
 
 from load_images import *
 
 STYLE_LAYERS = ('relu1_1', 'relu2_1')
 #STYLE_LAYERS = ('relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1')
-VGG_PATH = 'imagenet-vgg-verydeep-19.mat'
+VGG_PATH = 'vgg_net_original.mat'
 
 
-def evaluate(test_path):
+def evaluate(test_path, weight_path):
 
     """
     Trains the neural net using triplet loss
@@ -32,17 +32,17 @@ def evaluate(test_path):
 
     """
 
-    if not os.path.isfile(VGG_PATH):
+    if not os.path.isfile(weight_path):
         parser.error("Network %s does not exist. (Did you forget to download it?)" % VGG_PATH)
 
-    vgg_weights, vgg_mean_pixel = vgg.load_net(VGG_PATH)
+    parameter_dict = trained_vgg.load_net(weight_path)
 
     image_1 = tf.placeholder('float', shape=(None, 224,224,3))
     image_2 = tf.placeholder('float', shape=(None, 224,224,3))
     
     with tf.variable_scope("net", reuse=tf.AUTO_REUSE):
-        image_1_net = vgg.net_preloaded(vgg_weights, image_1)
-        image_2_net = vgg.net_preloaded(vgg_weights, image_2)
+        image_1_net = trained_vgg.net_preloaded(parameter_dict, image_1)
+        image_2_net = trained_vgg.net_preloaded(parameter_dict, image_2)
 
     image_1_styles = _generate_style(image_1_net, STYLE_LAYERS)
     image_2_styles = _generate_style(image_2_net, STYLE_LAYERS)
@@ -77,4 +77,5 @@ def _generate_style(net, style_layers):
 
 if __name__ == "__main__":
 
-    evaluate(sys.argv[1])
+    evaluate(sys.argv[1], sys.argv[2])
+    
