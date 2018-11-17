@@ -48,7 +48,7 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, batch_size=2
     negative_styles = _generate_style(negative_net, STYLE_LAYERS)
 
     
-    loss_threshold = 1000000
+    loss_threshold = 1e12
 
     dist_p = tf.add_n([tf.reduce_sum((anchor_styles[layer] - positive_styles[layer]) ** 2,[1,2]) for layer in STYLE_LAYERS])
     dist_n = tf.add_n([tf.reduce_sum((anchor_styles[layer] - negative_styles[layer]) ** 2,[1,2]) for layer in STYLE_LAYERS])
@@ -63,7 +63,7 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, batch_size=2
     train_step = tf.train.AdamOptimizer(learning_rate, beta1, beta2, epsilon).minimize(loss)
 
     # Initialize image loader
-    image_loader = Image_Loader('./preprocessed_images/', batch_size)
+    image_loader = Image_Loader('./train_test/', batch_size)
 
     #use just 1 batch
     #anchor, positive, negative = np.array(image_loader.load_next_batch())
@@ -80,14 +80,6 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, batch_size=2
         sess.run(tf.global_variables_initializer())
 
         graph = tf.get_default_graph()
-
-        if os.path.exists('checkpoints/model.cktp'):
-            try:
-                saver.restore(sess, "checkpoints/model.ckpt")
-                print("Restored weights from checkpoint")
-            except ValueError:
-                print("Could not load .ckpt file")
-                sess.run(tf.global_variables_initializer())
         
 
         print('Optimization started...')
@@ -117,10 +109,11 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, batch_size=2
    
             print('Cost: %d' % cost)
 
-            
+            """
             if (i + 1) % 5 == 0:
                 save_path = saver.save(sess, "checkpoints/model.ckpt")
                 print("Model saved in path: %s" % save_path)
+            """
           
             epoch_end = time.time()
             epoch_times.append(epoch_end - epoch_start)
@@ -130,14 +123,19 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, batch_size=2
         avg_dist_AP = 0
         avg_dist_AN = 0
         for anchor, positive, negative in tqdm(image_loader):
-            avg_dist_AP += sess.run(batch_avg_dist_AP, feed_dict={anchor_image : anchor, positive_image: positive, negative_image: negative})
-            avg_dist_AN += sess.run(batch_avg_dist_AN, feed_dict={anchor_image : anchor, positive_image: positive, negative_image: negative})
+
+            anchor = trained_vgg.preprocess(anchor, vgg_mean_pixel)
+            negative = trained_vgg.preprocess(positive, vgg_mean_pixel)
+            positive = trained_vgg.preprocess(negative, vgg_mean_pixel)
+
+            avg_dist_AP += sess.run(batch_avg_dist_AP, feed_dict={anchor_image : anchor, positive_image: positive})
+            avg_dist_AN += sess.run(batch_avg_dist_AN, feed_dict={anchor_image : anchor, negative_image: negative})
             
         avg_dist_AP = avg_dist_AP/len(image_loader)
         avg_dist_AN = avg_dist_AN/len(image_loader)
 
         print('Average distance A-P: %d' % avg_dist_AP)
-        print('Average distance N-P: %d' % avg_dist_AN)
+        print('Average distance A-N: %d' % avg_dist_AN)
 
         # Collect extra parameters to save in .mat-file
         extra_parameters = {}

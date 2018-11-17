@@ -11,8 +11,8 @@ import trained_vgg
 
 from load_images import *
 
-STYLE_LAYERS = ('relu1_1', 'relu2_1')
-#STYLE_LAYERS = ('relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1')
+#STYLE_LAYERS = ('relu1_1', 'relu2_1')
+STYLE_LAYERS = ('relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1')
 VGG_PATH = 'vgg_net_original.mat'
 
 
@@ -36,6 +36,7 @@ def evaluate(test_path, weight_path):
         parser.error("Network %s does not exist. (Did you forget to download it?)" % VGG_PATH)
 
     parameter_dict = trained_vgg.load_net(weight_path)
+    vgg_mean_pixel = parameter_dict['mean_pixel']
 
     image_1 = tf.placeholder('float', shape=(None, 224,224,3))
     image_2 = tf.placeholder('float', shape=(None, 224,224,3))
@@ -46,8 +47,6 @@ def evaluate(test_path, weight_path):
 
     image_1_styles = _generate_style(image_1_net, STYLE_LAYERS)
     image_2_styles = _generate_style(image_2_net, STYLE_LAYERS)
-
-    loss_threshold = 1000000
 
     compute_dist = tf.add_n([tf.reduce_sum((image_1_styles[layer] - image_2_styles[layer]) ** 2,[1,2]) for layer in STYLE_LAYERS])
 
@@ -60,6 +59,10 @@ def evaluate(test_path, weight_path):
 
         sess.run(tf.global_variables_initializer())
         for img1, img2 in image_loader:
+
+            img1 = trained_vgg.preprocess(img1, vgg_mean_pixel)
+            img2 = trained_vgg.preprocess(img2, vgg_mean_pixel)
+
             dist = sess.run(compute_dist, feed_dict={image_1 : img1, image_2: img2})
             print(dist)
 
