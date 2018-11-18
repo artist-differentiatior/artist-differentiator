@@ -100,6 +100,8 @@ def generate_triplets(csv_file_path, paintings_file_path):
                             break
                     if negative_file_name != '':
                         break
+
+            assert negative_file_name != '', "No more unique negatives"
             
             triplet_array.append([anchor_file_name, positive_file_name, negative_file_name]) # Add the new triplet to array
 
