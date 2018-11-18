@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import shutil
+import random
 
 from PIL.Image import LANCZOS
 from PIL.ImageOps import fit
@@ -54,7 +55,12 @@ def _preprocesse_images(source, triplet_array):
     sys.stdout.write(output)
     sys.stdout.flush()
 
-    for counter, triplet in enumerate(triplet_array):
+    random_indices = range(len(triplet_array))
+    random.shuffle(random_indices)
+    
+
+    for counter, index in enumerate(random_indices):
+        triplet = triplet_array[index]
         _create_preprocessed_triplet(source, counter + 1, triplet)
 
         #Write progress
