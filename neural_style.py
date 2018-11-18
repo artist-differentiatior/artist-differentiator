@@ -35,6 +35,12 @@ def build_parser():
     parser.add_argument('--network',
             dest='network', help='path to network parameters (default %(default)s)',
             metavar='VGG_PATH', default=VGG_PATH)
+    parser.add_argument('--dest',
+            dest='name', help='name/path of the trained weights',
+            metavar='DEST', required=True)
+    parser.add_argument('--checkpoints', type=bool,
+            dest='checkpoints', help='If you want to resume from a saved checkpoint (default %(default)s)',
+            metavar='CHECKPOINTS', default=False)
     parser.add_argument('--learning-rate', type=float,
             dest='learning_rate', help='learning rate (default %(default)s)',
             metavar='LEARNING_RATE', default=LEARNING_RATE)
@@ -47,8 +53,8 @@ def build_parser():
     parser.add_argument('--eps', type=float,
             dest='epsilon', help='Adam: epsilon parameter (default %(default)s)',
             metavar='EPSILON', default=EPSILON)
-    parser.add_argument('--mini_batch_size', type=int,
-            dest='mini_batch_size', help='mini batch size',
+    parser.add_argument('--mini-batch-size', type=int,
+            dest='mini_batch_size', help='mini batch size (default %(default)s)',
                         metavar='MINI_BATCH_SIZE', default=4)
     return parser
 
@@ -60,6 +66,13 @@ def main():
     if not os.path.isfile(options.network):
         parser.error("Network %s does not exist. (Did you forget to download it?)" % options.network)
 
+    if os.path.isfile(options.name + ".mat"):
+        print("Warning! " + options.name + ".mat" + " does already exist, do you want to overwrite it? (Y/N)")
+        answer = raw_input()
+        if answer != "Y" and answer != "y":
+                print("Exiting, rerun with another filename.")
+                exit()
+
     train_nn(
         network=options.network,
         epochs=options.epochs,
@@ -67,7 +80,9 @@ def main():
         beta1=options.beta1,
         beta2=options.beta2,
         epsilon=options.epsilon,
-        batch_size=options.mini_batch_size
+        batch_size=options.mini_batch_size,
+        save_file_name=options.name,
+        checkpoints=options.checkpoints
     )
 
 if __name__ == '__main__':

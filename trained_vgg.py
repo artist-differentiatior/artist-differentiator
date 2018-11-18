@@ -70,12 +70,11 @@ def preprocess(image, mean_pixel):
 def unprocess(image, mean_pixel):
     return image + mean_pixel
 
-def save_parameters(sess, extra_parameters):
+def save_parameters(sess, extra_parameters, file_name):
     """
     Saves the parameters trained in sess, in file 'trained_vgg_net.m'
     extra_parameters is a dictionary of additional parameters to save
     """
-    file_name = 'trained_vgg_net_TEST'
     
     graph = tf.get_default_graph()
     parameter_dict = {} 

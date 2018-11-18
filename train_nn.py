@@ -1,5 +1,6 @@
 import os
 import time
+import datetime
 from collections import OrderedDict
 from tqdm import tqdm # progressbar
 
@@ -10,13 +11,15 @@ import tensorflow as tf
 import trained_vgg
 
 from load_images import *
+import logging
+
 
 #STYLE_LAYERS = ('relu1_1', 'relu2_1')
 STYLE_LAYERS = ('relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1')
 #STYLE_LAYERS = ['relu5_1']
 
 
-def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, batch_size=2):
+def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_name, checkpoints, batch_size=2):
 
     """
     Trains the neural net using triplet loss
@@ -66,6 +69,7 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, batch_size=2
     train_step = tf.train.AdamOptimizer(learning_rate, beta1, beta2, epsilon).minimize(loss)
 
     # Initialize image loader
+    #image_loader = Image_Loader('./preprocessed_images/', batch_size)
     image_loader = Image_Loader('./train_test/', batch_size)
 
     #use just 1 batch
@@ -76,11 +80,31 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, batch_size=2
 
     saver = tf.train.Saver() 
 
+    if not os.path.exists("Log"):
+        os.makedirs("Log")
+        print("Created directory Log")
+
+    datetime_log = str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+
+    logging.basicConfig(filename='Log/' + datetime_log + '.log',level=logging.INFO)
+    logging.info('Started training: ' + datetime_log)
+
+    if not os.path.exists("checkpoints"):
+        os.makedirs("checkpoints")
+        print("Created directory checkpoints")
+
+        
+
 
     with tf.Session() as sess:
         
+        if checkpoints:
+            
+            saver.restore(sess, "checkpoints/model.ckpt")
 
-        sess.run(tf.global_variables_initializer())
+        else:   
+
+            sess.run(tf.global_variables_initializer())
 
         graph = tf.get_default_graph()
         
@@ -88,35 +112,47 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, batch_size=2
         print('Optimization started...')
         epoch_times = []
         start = time.time()
+
+        checkpoint_counter = 0
+
         for i in range(epochs):
             epoch_start = time.time()
             if i > 0:
                 elapsed = time.time() - start
                 # take average of last couple steps to get time per iteration
                 remaining = np.mean(epoch_times[-10:]) * (epochs - i)
-                print('Epoch %4d/%4d (%s elapsed, %s remaining)' % (
+                epoch_info = 'Epoch %4d/%4d (%s elapsed, %s remaining)' % (
                     i + 1,
                     epochs,
                     hms(elapsed),
                     hms(remaining)
-                ))
+                )
+                print(epoch_info)
+                logging.info(epoch_info)
             else:
                 print('Epoch %4d/%4d' % (i + 1, epochs))
             
+            iteration_num = 0
             for anchor, positive, negative in tqdm(image_loader):
                 anchor = trained_vgg.preprocess(anchor, vgg_mean_pixel)
                 positive = trained_vgg.preprocess(positive, vgg_mean_pixel)
                 negative = trained_vgg.preprocess(negative, vgg_mean_pixel)
 
                 cost, _ = sess.run([loss, train_step], feed_dict={anchor_image : anchor, positive_image: positive, negative_image: negative})
-   
-            print('Cost: %d' % cost)
 
-            """
-            if (i + 1) % 5 == 0:
-                save_path = saver.save(sess, "checkpoints/model.ckpt")
-                print("Model saved in path: %s" % save_path)
-            """
+                iteration_num += 1
+                logging.info("Epoch: " + str(i + 1) + "/" + str(epochs) + \
+                             " Iteration: " + str(iteration_num) + "/" + str(len(image_loader)) + \
+                             " Cost: " + str(cost))
+
+                if checkpoint_counter == 4:
+                    save_path = saver.save(sess, "checkpoints/model.ckpt")
+                    #print("Model saved in path: %s" % save_path)
+                    checkpoint_counter = 0
+                else:
+                    checkpoint_counter += 1
+
+            print('Cost: %d' % cost)
           
             epoch_end = time.time()
             epoch_times.append(epoch_end - epoch_start)
@@ -149,7 +185,7 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, batch_size=2
         
 
         print('Saving parameters...')
-        file_name = trained_vgg.save_parameters(sess, extra_parameters)
+        file_name = trained_vgg.save_parameters(sess, extra_parameters, save_file_name)
         print('Parameters saved in: ' + file_name + '.m')
         
             
