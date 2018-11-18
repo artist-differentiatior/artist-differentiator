@@ -83,6 +83,7 @@ def generate_triplets(csv_file_path, paintings_file_path):
             negative_file_name = ''
             painting_indices = list(range(len(style_dict[anchor_style])))
             random.shuffle(painting_indices)
+
             for j in painting_indices:
                 negative_artist = style_dict[anchor_style][j][1]
                 if artist != negative_artist:
@@ -91,16 +92,16 @@ def generate_triplets(csv_file_path, paintings_file_path):
                     break
 
             if negative_file_name == '': # If no such painting exists
-                while True: 
-                    random_artist = random.choice(list(artist_dict)) # Pick a random other artist
-                    if random_artist != artist:
+                for style in style_dict:
+                    for painting in style_dict[style]:
+                        if painting[1] != artist:
+                            negative_file_name = painting[0]
+                            style_dict[style].remove(painting)
+                            break
+                    if negative_file_name != '':
                         break
-                paintings_by_random_artist = artist_dict[random_artist]
-                random_index = random.randrange(0, len(paintings_by_random_artist)-1) # Pick a random painting by that artist
-                negative_file_name = paintings_by_random_artist[random_index][0]
             
             triplet_array.append([anchor_file_name, positive_file_name, negative_file_name]) # Add the new triplet to array
-
 
 
     return triplet_array
@@ -112,5 +113,8 @@ def generate_triplets(csv_file_path, paintings_file_path):
 def main():
 
     print(generate_triplets("new_train_info.csv", "sample_triplet/"))
+
+if __name__ == "__main__":
+    main()
     
 
