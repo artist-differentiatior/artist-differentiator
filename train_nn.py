@@ -18,8 +18,10 @@ import logging
 STYLE_LAYERS = ('relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1')
 #STYLE_LAYERS = ['relu5_1']
 
+PREPROCESSED_PATH = './preprocessed_images/'
 
-def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_name, checkpoints, batch_size=2):
+
+def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_name, checkpoints, batch_size, device_name):
 
     """
     Trains the neural net using triplet loss
@@ -42,7 +44,7 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_na
     positive_image = tf.placeholder('float', shape=(None, 224,224,3))
     negative_image = tf.placeholder('float', shape=(None, 224,224,3))
     
-    with tf.variable_scope("net", reuse=tf.AUTO_REUSE):
+    with tf.variable_scope("net", reuse=tf.AUTO_REUSE), tf.device(device_name):
         anchor_net = trained_vgg.net_preloaded(parameter_dict, anchor_image)
         positive_net = trained_vgg.net_preloaded(parameter_dict, positive_image)
         negative_net = trained_vgg.net_preloaded(parameter_dict, negative_image)
@@ -69,8 +71,7 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_na
     train_step = tf.train.AdamOptimizer(learning_rate, beta1, beta2, epsilon).minimize(loss)
 
     # Initialize image loader
-    #image_loader = Image_Loader('./preprocessed_images/', batch_size)
-    image_loader = Image_Loader('./train_test/', batch_size)
+    image_loader = Image_Loader(PREPROCESSED_PATH, batch_size)
 
     #use just 1 batch
     #anchor, positive, negative = np.array(image_loader.load_next_batch())
