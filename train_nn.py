@@ -69,8 +69,8 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_na
     train_step = tf.train.AdamOptimizer(learning_rate, beta1, beta2, epsilon).minimize(loss)
 
     # Initialize image loader
-    #image_loader = Image_Loader('./preprocessed_images/', batch_size)
-    image_loader = Image_Loader('./train_test/', batch_size)
+    image_loader = Image_Loader('./preprocessed_images/', batch_size)
+    #image_loader = Image_Loader('./train_test/', batch_size)
 
     #use just 1 batch
     #anchor, positive, negative = np.array(image_loader.load_next_batch())
