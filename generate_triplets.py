@@ -81,12 +81,14 @@ def generate_triplets(csv_file_path, paintings_file_path):
             paintings_with_style = style_dict[anchor_style] # retrieve all paintings with same style as anchor
 
             negative_file_name = ''
-            painting_indices = list(range(len(paintings_with_style)))
+            painting_indices = list(range(len(style_dict[anchor_style])))
             random.shuffle(painting_indices)
             for j in painting_indices:
-                negative_artist = paintings_with_style[j][1]
+                negative_artist = style_dict[anchor_style][j][1]
                 if artist != negative_artist:
-                    negative_file_name = paintings_with_style[j][0] # Pick next painting with different artist but same style as negative
+                    negative_file_name = style_dict[anchor_style][j][0] # Pick next painting with different artist but same style as negative
+                    style_dict[anchor_style].remove(style_dict[anchor_style][j])
+                    break
 
             if negative_file_name == '': # If no such painting exists
                 while True: 

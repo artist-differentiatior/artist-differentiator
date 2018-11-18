@@ -52,7 +52,7 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_na
     negative_styles = _generate_style(negative_net, STYLE_LAYERS)
 
 
-    loss_threshold = 1e15
+    loss_threshold = 1e18
 
     dist_p = tf.add_n([tf.reduce_sum((anchor_styles[layer] - positive_styles[layer]) ** 2,[1,2]) for layer in STYLE_LAYERS])
     dist_n = tf.add_n([tf.reduce_sum((anchor_styles[layer] - negative_styles[layer]) ** 2,[1,2]) for layer in STYLE_LAYERS])
