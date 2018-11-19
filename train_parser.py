@@ -53,7 +53,7 @@ def build_parser():
             dest='epsilon', help='Adam: epsilon parameter (default %(default)s)',
             metavar='EPSILON', default=EPSILON)
     parser.add_argument('--mini-batch-size', type=int,
-            dest='mini_batch_size', help='mini batch size (default %(default)s)'
+                        dest='mini_batch_size', help='mini batch size (default %(default)s)',
             metavar='MINI_BATCH_SIZE', default=4)
     parser.add_argument('--device',
             dest='device', help='device - cpu or gpu (default %(default)s)',
