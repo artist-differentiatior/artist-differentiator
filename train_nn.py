@@ -20,8 +20,7 @@ STYLE_LAYERS = ('relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1')
 
 PREPROCESSED_PATH = './preprocessed_images/'
 
-
-def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_name, checkpoints, batch_size, device_name):
+def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_name, checkpoints, loss_threshold, batch_size, device_name):
 
     """
     Trains the neural net using triplet loss
@@ -52,9 +51,6 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_na
     anchor_styles = _generate_style(anchor_net, STYLE_LAYERS)
     positive_styles = _generate_style(positive_net, STYLE_LAYERS)
     negative_styles = _generate_style(negative_net, STYLE_LAYERS)
-
-
-    loss_threshold = 1e15
 
     dist_p = tf.add_n([tf.reduce_sum((anchor_styles[layer] - positive_styles[layer]) ** 2,[1,2]) for layer in STYLE_LAYERS])
     dist_n = tf.add_n([tf.reduce_sum((anchor_styles[layer] - negative_styles[layer]) ** 2,[1,2]) for layer in STYLE_LAYERS])

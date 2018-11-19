@@ -1,5 +1,3 @@
-# Copyright (c) 2015-2018 Anish Athalye. Released under GPLv3.
-
 import os
 
 import numpy as np
@@ -26,6 +24,7 @@ STYLE_SCALE = 1.0
 EPOCHS = 1
 VGG_PATH = 'vgg_net_original.mat'
 POOLING = 'max'
+LOSS_THRESHOLD = 1e12
 
 def build_parser():
     parser = ArgumentParser()
@@ -54,11 +53,15 @@ def build_parser():
             dest='epsilon', help='Adam: epsilon parameter (default %(default)s)',
             metavar='EPSILON', default=EPSILON)
     parser.add_argument('--mini-batch-size', type=int,
-            dest='mini_batch_size', help='mini batch size (default %(default)s)',
+            dest='mini_batch_size', help='mini batch size (default %(default)s)'
             metavar='MINI_BATCH_SIZE', default=4)
     parser.add_argument('--device',
             dest='device', help='device - cpu or gpu (default %(default)s)',
             metavar='DEVICE', default='cpu')
+    parser.add_argument('--loss-threshold', 
+            dest='loss_threshold', help='mini batch size (default %(default)s)',
+                        metavar='LOSS_THRESHOLD', default=LOSS_THRESHOLD)
+    
     return parser
 
 
@@ -95,7 +98,8 @@ def main():
         batch_size=options.mini_batch_size,
         save_file_name=options.name,
         checkpoints=options.checkpoints,
-        device_name=options.device
+        device_name=options.device,
+        loss_threshold=options.loss_threshold
     )
 
 if __name__ == '__main__':
