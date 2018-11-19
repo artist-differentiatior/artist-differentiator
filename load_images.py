@@ -7,11 +7,11 @@ from os import listdir
 
 class Image_Loader:
 
-    def __init__(self, image_source, mini_batch_size=3, triplet=True):
+    def __init__(self, image_source, mini_batch_size=3, load_size=3):
         self.__image_source = image_source
 
-        #3 if triplets should be loaded, 2 otherwise(image pair)
-        self.__load_size = 3 if triplet else 2
+        #3 if triplets should be loaded
+        self.__load_size = load_size
 
         try:
             self.__images = listdir(self.__image_source)
@@ -48,10 +48,15 @@ class Image_Loader:
             self.__mini_batch_nr = self.__mini_batch_nr + 1
 
             if self.__load_size == 3:
-                #anchor, positive, negative
+                # anchor, positive, negative
                 return images[0::self.__load_size], images[2::self.__load_size], images[1::self.__load_size]
-
-            return images[0::self.__load_size], images[1::self.__load_size]
+            elif self.__load_size == 2:
+                # image1, image2
+                return images[0::self.__load_size], images[1::self.__load_size]
+            elif self.__load_size == 1:
+                return images[0::self.__load_size]
+            else:
+                raise ValueError('Illegal value for image load size. Should be 1, 2 or 3')
         
         else:
             raise StopIteration

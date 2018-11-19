@@ -1,6 +1,7 @@
 import os
 import time
 from collections import OrderedDict
+
 #from tqdm import tqdm # progressbar
 
 from PIL import Image
@@ -50,6 +51,7 @@ def evaluate(test_path, weight_path):
 
     compute_dist = tf.add_n([tf.reduce_sum((image_1_styles[layer] - image_2_styles[layer]) ** 2,[1,2]) for layer in STYLE_LAYERS])
 
+    
     # Initialize image loader
     image_loader = Image_Loader(test_path, 1, triplet=False)
 
@@ -64,8 +66,10 @@ def evaluate(test_path, weight_path):
             img2 = trained_vgg.preprocess(img2, vgg_mean_pixel)
 
             dist = sess.run(compute_dist, feed_dict={image_1 : img1, image_2: img2})
+
             print(dist)
 
+    
             
 def _generate_style(net, style_layers):
     styles = {}
