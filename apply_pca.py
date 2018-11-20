@@ -27,7 +27,7 @@ ORIGINAL_FILE_PATH = 'sample_images/'
 
 
 
-def apply_pca(test_path, weight_path):
+def apply_pca(weight_path, preprocessed_path=PREPROCESSED_PATH):
 
     """
     Trains the neural net using triplet loss
@@ -47,7 +47,7 @@ def apply_pca(test_path, weight_path):
         parser.error("Network %s does not exist. (Did you forget to download it?)" % VGG_PATH)
 
     print('Copying images to: ' + PCA_PATH)
-    pca_files_dict, n_paintings_dict = _create_dir_for_pca(PCA_PATH, PREPROCESSED_PATH)
+    pca_files_dict, n_paintings_dict = _create_dir_for_pca(preprocessed_path, PCA_PATH)
     artists = n_paintings_dict.keys()
     
     print('Building net...')
@@ -66,7 +66,7 @@ def apply_pca(test_path, weight_path):
     gram_data = {}
 
     # Initialize image loader
-    image_loader = Image_Loader(test_path, 1, load_size=1)
+    image_loader = Image_Loader(PCA_PATH, 1, load_size=1)
 
     #saver = tf.train.Saver()
 
@@ -93,7 +93,7 @@ def apply_pca(test_path, weight_path):
                 gram = sess.run(image_styles[layer], feed_dict={image: img}) # Compute gram matrices
                 gram = gram.reshape(gram.shape[0]*gram.shape[1]*gram.shape[2]) # Flatten gram matrices
                 
-                gram_all_layers = np.concatenate((gram_all_layers, gram), axis=0) # Concatanate with gram matrices of other layers
+            gram_all_layers = np.concatenate((gram_all_layers, gram), axis=0) # Concatanate with gram matrices of other layers
 
             if current_artist not in gram_data: # Add the gram data to the corresponding artists entry in dictionary
                 gram_data[current_artist] = [gram_all_layers]
@@ -138,7 +138,7 @@ def _generate_style(net, style_layers):
 
     return styles
 
-def _create_dir_for_pca(pca_path, preprocessed_path):
+def _create_dir_for_pca(preprocessed_path, pca_path):
     """
     Parses csv-file and creates directory with all preprocessed images in order of artist
     """
@@ -235,4 +235,7 @@ def _parse_info_file(csv_file_path, original_paintings_file_path):
 
 if __name__ == "__main__":
 
-    apply_pca(sys.argv[1], sys.argv[2])
+    if len(sys.argv)==3:
+        apply_pca(sys.argv[1], sys.argv[2])
+    else:
+        apply_pca(sys.argv[1])
