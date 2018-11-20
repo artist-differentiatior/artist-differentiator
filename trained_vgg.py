@@ -26,7 +26,7 @@ def load_net(data_path):
     return parameter_dict
 
 
-def net_preloaded(parameter_dict, input_image):
+def net_preloaded(parameter_dict, input_image, num_freeze=0):
     """
     Generates layers of VGG net.
     """
@@ -34,11 +34,17 @@ def net_preloaded(parameter_dict, input_image):
     net = {}
     current = input_image
     for i, layer_name in enumerate(VGG19_LAYERS):
+
+        if i < num_freeze:
+            freeze = True
+        else:
+            freeze = False
+
         kind = layer_name[:4]
         if kind == 'conv':
             weights = parameter_dict['w' + layer_name]
             bias = parameter_dict['b' + layer_name].reshape(-1)
-            current = _conv_layer(current, weights, bias, layer_name)
+            current = _conv_layer(current, weights, bias, layer_name, freeze)
         elif kind == 'relu':
             current = tf.nn.relu(current)
         elif kind == 'pool':
@@ -48,15 +54,22 @@ def net_preloaded(parameter_dict, input_image):
     assert len(net) == len(VGG19_LAYERS)
     return net
 
-def _conv_layer(input, weights, bias, layer_name):
+def _conv_layer(input, weights, bias, layer_name, freeze):
 
-    w = tf.get_variable("w" + layer_name, initializer=tf.Variable(weights))
-    b = tf.get_variable("b" + layer_name, initializer=tf.Variable(bias))
-    
-    conv = tf.nn.conv2d(input, w, strides=(1, 1, 1, 1),
+    if freeze:
+        conv = tf.nn.conv2d(input, tf.constant(weights, name="w" + layer_name), strides=(1, 1, 1, 1),
             padding='SAME')
+        bias = tf.constant(bias, name="b" + layer_name)
+        return tf.nn.bias_add(conv, bias)
+
+    else:
+        w = tf.get_variable("w" + layer_name, initializer=tf.Variable(weights))
+        b = tf.get_variable("b" + layer_name, initializer=tf.Variable(bias))
     
-    return tf.nn.bias_add(conv, b)
+        conv = tf.nn.conv2d(input, w, strides=(1, 1, 1, 1),
+                padding='SAME')
+    
+        return tf.nn.bias_add(conv, b)
 
 
 def _pool_layer(input):
