@@ -38,7 +38,7 @@ def apply_pca(test_path, weight_path):
         learning_rate: (float) learning rate
         beta1: (float) momentum parameter for adam optimizer
         beta2: (float) RMSprop parameter for adam optimizer
-        epsilon: (float) prevent division with 0 in adaom optimizer
+        epsilon: (float) prevent division with 0 in adam optimizer
         batch_size: (int) size of mini batches
 
     """
@@ -93,7 +93,7 @@ def apply_pca(test_path, weight_path):
                 gram = sess.run(image_styles[layer], feed_dict={image: img}) # Compute gram matrices
                 gram = gram.reshape(gram.shape[0]*gram.shape[1]*gram.shape[2]) # Flatten gram matrices
                 
-                gram_all_layers = np.concatenate((gram_all_layers, gram), axis=None) # Concatanate with gram matrices of other layers
+                gram_all_layers = np.concatenate((gram_all_layers, gram), axis=0) # Concatanate with gram matrices of other layers
 
             if current_artist not in gram_data: # Add the gram data to the corresponding artists entry in dictionary
                 gram_data[current_artist] = [gram_all_layers]
@@ -147,63 +147,43 @@ def _create_dir_for_pca(pca_path, preprocessed_path):
 
     pca_files_dict = {}
     n_paintings_dict = {}
-
-    i = 1
-    j = 1
+    files_covered = []
+    
+    total_nr_paintings = 0
     for artist, paintings_by_artist in filename_dict.iteritems():
-
+        total_nr_paintings += len(paintings_by_artist)
         n_paintings_dict[artist] = len(paintings_by_artist)
         
-        for index in range(0,len(paintings_by_artist)-1): # Iterate over paintings by current artist
+    i = 1
+    for artist, paintings_by_artist in filename_dict.iteritems(): # Iterate over all artists
 
-            # Define source
-            prefix = str(i) + '_A-'
-            if i < 10:
-                 prefix = '0' + prefix    
-            src = preprocessed_path + prefix + paintings_by_artist[index]
+        for painting_name in paintings_by_artist: # Iterate over this artists paintings
 
-            # Define destination
-            prefix = str(j)
-            if j < 10:
-                prefix = '0' + prefix
-            new_filename = prefix + '.jpg' 
-            dest = pca_path + prefix + '.jpg'
+            for file in os.listdir(preprocessed_path): # Go through the preprocessed files
 
-            # Copy src to dest
-            copy2(src, dest)
+                if painting_name in files_covered:
+                    break
 
-            # Add entry to dict
-            if artist not in pca_files_dict:
-                pca_files_dict[artist] = [new_filename]
-            else:
-                pca_files_dict[artist].append(new_filename)
+                if ('-' + painting_name) in file: # Find the corresponding preprocessed painting
+                    
+                    if len(str(i)) < len(str(total_nr_paintings)):
+                        prefix = (len(str(total_nr_paintings)) - len(str(i)))*'0' + str(i)
+                    else:
+                        prefix = str(i)
 
-            if index != len(paintings_by_artist)-2: 
-                i += 1
-            j += 1
-
-        # Final painting - source
-        final_index = i
-        prefix = str(final_index) + '_P-'
-        if final_index < 10:
-            prefix = '0' + prefix
-        src = preprocessed_path + prefix + paintings_by_artist[len(paintings_by_artist)-1]
-
-        # Final painting - destination
-        prefix = str(j)
-        if j < 10:
-            prefix = '0' + prefix
-        new_filename = prefix + '.jpg'
-        dest = pca_path + prefix + '.jpg'
-
-        # copy final painting to dest
-        copy2(src, dest)
-
-        # Add entry to dict
-        pca_files_dict[artist].append(new_filename)
-
-        i += 1
-        j += 1
+                    new_filename = prefix + '_' + painting_name
+                    src = preprocessed_path + file
+                    dest = pca_path + new_filename
+                    
+                    copy2(src, dest) # copy the file to new dir
+                        
+                    if artist not in pca_files_dict: # Add this file to the pca files 
+                        pca_files_dict[artist] = [new_filename]
+                    else:
+                        pca_files_dict[artist].append(new_filename)
+                        
+                    i += 1
+                    files_covered.append(painting_name)
 
             
     return pca_files_dict, n_paintings_dict

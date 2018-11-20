@@ -53,7 +53,7 @@ def evaluate(test_path, weight_path):
 
     
     # Initialize image loader
-    image_loader = Image_Loader(test_path, 1, triplet=False)
+    image_loader = Image_Loader(test_path, 1, load_size=2)
 
     #saver = tf.train.Saver()
 

@@ -56,7 +56,7 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_na
     dist_n = tf.add_n([tf.reduce_sum((anchor_styles[layer] - negative_styles[layer]) ** 2,[1,2]) for layer in STYLE_LAYERS])
     
     max_sum = tf.maximum(dist_p - dist_n + loss_threshold, 0)
-    loss = tf.reduce_sum(max_sum) / batch_size
+    loss = tf.reduce_sum(max_sum) / batch_size # Divide by batch size
 
 
     # Used to compute threshold for evaluating on pairs of images
