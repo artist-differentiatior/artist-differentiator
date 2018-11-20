@@ -43,7 +43,7 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_na
     positive_image = tf.placeholder('float', shape=(None, 224,224,3))
     negative_image = tf.placeholder('float', shape=(None, 224,224,3))
     
-    with tf.variable_scope("net", reuse=tf.AUTO_REUSE, tf.device(device_name)):
+    with tf.variable_scope("net", reuse=tf.AUTO_REUSE), tf.device(device_name):
         anchor_net = trained_vgg.net_preloaded(parameter_dict, anchor_image, 19)
         positive_net = trained_vgg.net_preloaded(parameter_dict, positive_image, 19)
         negative_net = trained_vgg.net_preloaded(parameter_dict, negative_image, 19)
