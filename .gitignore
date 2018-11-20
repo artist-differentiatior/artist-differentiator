@@ -9,6 +9,7 @@ test.jpg
 preprocessed_images
 sample_triplet
 sample_images
+pca_images
 save/
 *~
 checkpoints/

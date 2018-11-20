@@ -53,12 +53,15 @@ def build_parser():
             dest='epsilon', help='Adam: epsilon parameter (default %(default)s)',
             metavar='EPSILON', default=EPSILON)
     parser.add_argument('--mini-batch-size', type=int,
-            dest='mini_batch_size', help='mini batch size (default %(default)s)',
-                        metavar='MINI_BATCH_SIZE', default=4)
+                        dest='mini_batch_size', help='mini batch size (default %(default)s)',
+            metavar='MINI_BATCH_SIZE', default=4)
+    parser.add_argument('--device',
+            dest='device', help='device - cpu or gpu (default %(default)s)',
+            metavar='DEVICE', default='cpu')
     parser.add_argument('--loss-threshold', 
             dest='loss_threshold', help='mini batch size (default %(default)s)',
                         metavar='LOSS_THRESHOLD', default=LOSS_THRESHOLD)
-
+    
     return parser
 
 
@@ -75,6 +78,15 @@ def main():
         if answer != "Y" and answer != "y":
                 print("Exiting, rerun with another filename.")
                 exit()
+                
+    if options.device == 'cpu':
+        options.device = '/cpu:0'
+    elif options.device == 'gpu':
+        options.device = '/gpu:0'
+    else:
+        parser.error('Invalid device. Choose cpu or gpu')
+        exit()
+    
 
     train_nn(
         network=options.network,
@@ -86,6 +98,7 @@ def main():
         batch_size=options.mini_batch_size,
         save_file_name=options.name,
         checkpoints=options.checkpoints,
+        device_name=options.device,
         loss_threshold=options.loss_threshold
     )
 
