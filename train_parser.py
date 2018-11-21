@@ -25,6 +25,7 @@ EPOCHS = 1
 VGG_PATH = 'vgg_net_original.mat'
 POOLING = 'max'
 LOSS_THRESHOLD = 1e12
+POSITIVE_WEIGHT = 1
 
 def build_parser():
     parser = ArgumentParser()
@@ -52,6 +53,9 @@ def build_parser():
     parser.add_argument('--eps', type=float,
             dest='epsilon', help='Adam: epsilon parameter (default %(default)s)',
             metavar='EPSILON', default=EPSILON)
+    parser.add_argument('--positive-weight', type=float,
+            dest='positive_weight', help='Loss: weight of AP-distance (default %(default)s)',
+                        metavar='POSITIVE_WEIGHT', default=POSITIVE_WEIGHT)
     parser.add_argument('--mini-batch-size', type=int,
                         dest='mini_batch_size', help='mini batch size (default %(default)s)',
             metavar='MINI_BATCH_SIZE', default=4)
@@ -99,7 +103,8 @@ def main():
         save_file_name=options.name,
         checkpoints=options.checkpoints,
         device_name=options.device,
-        loss_threshold=options.loss_threshold
+        loss_threshold=options.loss_threshold,
+        positive_weight=options.positive_weight
     )
 
 if __name__ == '__main__':
