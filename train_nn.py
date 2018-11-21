@@ -149,7 +149,7 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_na
                 else:
                     checkpoint_counter += 1
 
-            print('Cost: %d' % cost)
+            print('Cost: %e' % cost)
           
             epoch_end = time.time()
             epoch_times.append(epoch_end - epoch_start)
@@ -171,8 +171,8 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_na
         avg_dist_AP = avg_dist_AP
         avg_dist_AN = avg_dist_AN
 
-        print('Average distance A-P: %d' % avg_dist_AP)
-        print('Average distance A-N: %d' % avg_dist_AN)
+        print('Average distance A-P: %e' % avg_dist_AP)
+        print('Average distance A-N: %e' % avg_dist_AN)
 
         # Collect extra parameters to save in .mat-file
         extra_parameters = {}
