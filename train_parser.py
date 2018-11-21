@@ -87,7 +87,7 @@ def main():
         parser.error('Invalid device. Choose cpu or gpu')
         exit()
     
-
+    print(options.loss_threshold)
     train_nn(
         network=options.network,
         epochs=options.epochs,
