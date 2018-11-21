@@ -58,7 +58,7 @@ def build_parser():
     parser.add_argument('--device',
             dest='device', help='device - cpu or gpu (default %(default)s)',
             metavar='DEVICE', default='cpu')
-    parser.add_argument('--loss-threshold', 
+    parser.add_argument('--loss-threshold', type=int,
             dest='loss_threshold', help='mini batch size (default %(default)s)',
                         metavar='LOSS_THRESHOLD', default=LOSS_THRESHOLD)
     

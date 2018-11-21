@@ -15,8 +15,8 @@ import logging
 
 
 #STYLE_LAYERS = ('relu1_1', 'relu2_1')
-STYLE_LAYERS = ('relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1')
-#STYLE_LAYERS = ['relu5_1']
+#STYLE_LAYERS = ('relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1')
+STYLE_LAYERS = ['relu4_1','relu5_1']
 
 PREPROCESSED_PATH = './preprocessed_images/'
 
@@ -44,9 +44,9 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_na
     negative_image = tf.placeholder('float', shape=(None, 224,224,3))
     
     with tf.variable_scope("net", reuse=tf.AUTO_REUSE), tf.device(device_name):
-        anchor_net = trained_vgg.net_preloaded(parameter_dict, anchor_image)
-        positive_net = trained_vgg.net_preloaded(parameter_dict, positive_image)
-        negative_net = trained_vgg.net_preloaded(parameter_dict, negative_image)
+        anchor_net = trained_vgg.net_preloaded(parameter_dict, anchor_image, 19)
+        positive_net = trained_vgg.net_preloaded(parameter_dict, positive_image, 19)
+        negative_net = trained_vgg.net_preloaded(parameter_dict, negative_image, 19)
 
     anchor_styles = _generate_style(anchor_net, STYLE_LAYERS)
     positive_styles = _generate_style(positive_net, STYLE_LAYERS)
