@@ -2,6 +2,7 @@
 import csv
 import random
 import os
+import numpy as np
 
 
 def _parse_info_file(csv_file_path, paintings_file_path):
@@ -23,39 +24,30 @@ def _parse_info_file(csv_file_path, paintings_file_path):
         info_reader = csv.reader(info_file, dialect="excel", delimiter=",", quotechar="\"")
 
         artist_dict = {} # key=artist, value=[[file_name, style], ...]
-        style_dict = {} # key=style, value=[[file_name, artist], ...]
         info = info_reader.next()
         
         artist_index = info.index("artist")
         filename_index = info.index("filename")
-        style_index = info.index("style")
 
         for row in info_reader:
             
             artist_name = row[artist_index]
-            style_name = row[style_index]
             file_name = row[filename_index]
 
             if file_name not in file_names:
                 continue
             
-            artist_dict_info = [file_name, style_name]
-            style_dict_info = [file_name, artist_name]
+            artist_dict_info = file_name
             
             if artist_name not in artist_dict:
                 artist_dict[artist_name] = [artist_dict_info]
             else:
                 artist_dict[artist_name].append(artist_dict_info)
 
-            if style_name not in style_dict:
-                style_dict[style_name] = [style_dict_info]
-            else:
-                style_dict[style_name].append(style_dict_info)
-
         
-    return artist_dict, style_dict
+    return artist_dict
 
-def generate_triplets(csv_file_path, paintings_file_path):
+def generate_triplets(csv_file_path, paintings_file_path, num_anchors=3):
 
     '''
     Generates triplets from .cvs file in csv_file_path.
@@ -65,45 +57,35 @@ def generate_triplets(csv_file_path, paintings_file_path):
         paintings_file_path: (str) path to directory containing dataset
     '''
 
-    artist_dict, style_dict = _parse_info_file(csv_file_path, paintings_file_path)
+    artist_dict = _parse_info_file(csv_file_path, paintings_file_path)
     triplet_array = []
 
-    
+    assert len(artist_dict) > 1, "Just 1 artist"
+
     for artist, paintings_by_artist in artist_dict.iteritems(): # Iterate over all artists
         
         assert len(paintings_by_artist) > 1, "Just 1 painting from %r, can't generate triplet!" %artist
         
-        for i in range(0,len(paintings_by_artist) - 1): # Iterate over paintings by current artist
-            anchor_file_name = paintings_by_artist[i][0] # Pick current painting as anchor
-            positive_file_name = paintings_by_artist[i+1][0] # Pick next painting by same artist as positive
+        for index, painting in enumerate(paintings_by_artist): # Iterate over paintings by current artist
 
-            anchor_style = paintings_by_artist[i][1]
-            paintings_with_style = style_dict[anchor_style] # retrieve all paintings with same style as anchor
-
-            negative_file_name = ''
-            painting_indices = list(range(len(style_dict[anchor_style])))
-            random.shuffle(painting_indices)
-
-            for j in painting_indices:
-                negative_artist = style_dict[anchor_style][j][1]
-                if artist != negative_artist:
-                    negative_file_name = style_dict[anchor_style][j][0] # Pick next painting with different artist but same style as negative
-                    style_dict[anchor_style].remove(style_dict[anchor_style][j])
+            anchor_file_name = painting # Pick current painting as anchor
+            
+            while True:
+                indices = np.random.randint(0,len(paintings_by_artist), 3)
+                if index not in indices:
                     break
 
-            if negative_file_name == '': # If no such painting exists
-                for style in style_dict:
-                    for painting in style_dict[style]:
-                        if painting[1] != artist:
-                            negative_file_name = painting[0]
-                            style_dict[style].remove(painting)
-                            break
-                    if negative_file_name != '':
-                        break
+            for i in indices:
+                positive_file_name = paintings_by_artist[i]
 
-            assert negative_file_name != '', "No more unique negatives"
-            
-            triplet_array.append([anchor_file_name, positive_file_name, negative_file_name]) # Add the new triplet to array
+                artists = list(artist_dict.keys())
+                artists.remove(artist) #remove current artist
+
+                random_artist = random.choice(artists)
+                random_painting = random.choice(artist_dict[random_artist])
+                negative_file_name = random_painting
+
+                triplet_array.append([anchor_file_name, positive_file_name, negative_file_name]) # Add the new triplet to array
 
 
     return triplet_array
@@ -114,7 +96,7 @@ def generate_triplets(csv_file_path, paintings_file_path):
 
 def main():
 
-    print(generate_triplets("new_train_info.csv", "sample_triplet/"))
+    print(generate_triplets("new_train_info.csv", "test2/"))
 
 if __name__ == "__main__":
     main()

@@ -25,7 +25,7 @@ VGG_PATH = 'vgg_net_original.mat'
 CSV_FILE_PATH = 'new_train_info.csv'
 PCA_PATH = 'pca_images/'
 PREPROCESSED_PATH = 'preprocessed_images/'
-ORIGINAL_FILE_PATH = 'test/'
+ORIGINAL_FILE_PATH = 'sample_images/'
 
 
 

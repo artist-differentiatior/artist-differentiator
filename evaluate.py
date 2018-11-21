@@ -55,6 +55,13 @@ def evaluate(test_path, weight_path):
     # Initialize image loader
     image_loader = Image_Loader(test_path, 1, load_size=2)
 
+    avg_dist_AP = parameter_dict['avg_dist_AP']
+    avg_dist_AN = parameter_dict['avg_dist_AN']
+    print('Average distance AP: %e' % avg_dist_AP)
+    print('Average distance AN: %e'% avg_dist_AN)
+
+    prediction = []
+
     #saver = tf.train.Saver()
 
     with tf.Session() as sess:
@@ -67,7 +74,22 @@ def evaluate(test_path, weight_path):
 
             dist = sess.run(compute_dist, feed_dict={image_1 : img1, image_2: img2})
 
+            diff_dist_AP = np.abs(dist - avg_dist_AP)
+            diff_dist_AN = np.abs(dist - avg_dist_AN)
+
+            print('diff_dist_AP: %e' % diff_dist_AP)
+            print('diff_dist_AN: %e' % diff_dist_AN)
+
+
+
+            if diff_dist_AP <= diff_dist_AN:
+                prediction.append(1)
+            else:
+                prediction.append(0)
+
             print(dist)
+            
+        print('Prediction:' + str(prediction))
 
     
             
