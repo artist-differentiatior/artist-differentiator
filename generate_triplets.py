@@ -71,7 +71,7 @@ def generate_triplets(csv_file_path, paintings_file_path, num_anchors=10):
             anchor_file_name = painting # Pick current painting as anchor
             
             while True:
-                indices = np.random.randint(0,len(paintings_by_artist), 10)
+                indices = np.random.randint(0,len(paintings_by_artist), num_anchors)
                 if index not in indices:
                     break
 
