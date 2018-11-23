@@ -16,7 +16,7 @@ import logging
 
 
 NAME_STYLE_LAYERS = ['relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1']
-PREPROCESSED_PATH = './preprocessed_images/'
+PREPROCESSED_PATH = './train_data/'
 
 def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_name, checkpoints, loss_threshold,\
              positive_weight, batch_size, device_name, style_layers_indices):
@@ -106,7 +106,7 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_na
         
 
         print('Optimization started...')
-	cost_data = []
+        cost_data = []
         epoch_times = []
         start = time.time()
 
@@ -137,8 +137,8 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_na
                 negative = trained_vgg.preprocess(negative, vgg_mean_pixel)
 
                 cost, _ = sess.run([loss, train_step], feed_dict={anchor_image : anchor, positive_image: positive, negative_image: negative})
-		
-		        cost_data.append(cost)
+
+                cost_data.append(cost)
 
                 iteration_num += 1
                 logging.info("Epoch: " + str(i + 1) + "/" + str(epochs) + \
@@ -147,8 +147,8 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_na
 
 
             save_path = saver.save(sess, "checkpoints/model.ckpt")
-    	    plt.plot(cost_data)
-	        plt.savefig('cost_fig.pdf')
+            plt.plot(cost_data)
+            plt.savefig('cost_fig.pdf')
           
             epoch_end = time.time()
             epoch_times.append(epoch_end - epoch_start)

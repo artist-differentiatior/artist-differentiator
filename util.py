@@ -47,7 +47,7 @@ def parse_info_file(csv_file_path, paintings_file_path):
     return artist_dict
 
 
-def generate_triplets(artist_dict, num_anchors=3):
+def generate_triplets(artist_dict, num_anchors):
 
     '''
     Generates triplets from a dictonary with artists as keys with painted paintings as value
@@ -71,12 +71,12 @@ def generate_triplets(artist_dict, num_anchors=3):
 
             for i in range(num_anchors):
 
-                positive_index = np.random.randint(0,len(paintings_by_artist), 1)
+                positive_index = random.randint(0,len(paintings_by_artist) - 1)
                 #Not same index as anchor
                 while positive_index == anchor_index:
-                    positive_index = np.random.randint(0,len(paintings_by_artist), 1)
+                    positive_index = random.randint(0,len(paintings_by_artist) - 1)
 
-                positive_painting = paintings_by_artist[i]
+                positive_painting = paintings_by_artist[positive_index]
 
                 #Get negative painting
                 artists = list(artist_dict.keys())
@@ -89,3 +89,44 @@ def generate_triplets(artist_dict, num_anchors=3):
                 triplet_array.append([painting, positive_painting, negative_painting]) # Add the new triplet to array
 
     return triplet_array
+
+def generate_touple(artist_dict, num):
+
+    '''
+    Generates triplets from a dictonary with artists as keys with painted paintings as value
+
+    Args:
+        artist_dict: (dict) Key (string): artist, value (array) corresponding paintings
+        num: (int) number of times to iterate over same painting to create a touple
+    '''
+
+    image_array = []
+
+    for artist, paintings_by_artist in artist_dict.iteritems():
+
+        for painting in paintings_by_artist:
+
+            image_array.append([painting, artist])
+
+    touple_array = []
+    answer = []
+
+    for index in range(len(image_array)):
+
+        for count in range(num):
+
+            random_index = random.randint(0,len(image_array) - 1)
+            while random_index == index:
+                random_index = random.randint(0,len(image_array) - 1)
+
+            painting1 = image_array[index][0]
+            artist1 = image_array[index][1]
+
+            painting2 = image_array[random_index][0]
+            artist2 = image_array[random_index][1]
+            
+            touple_array.append([painting1, painting2])
+            answer.append(1 if artist1 == artist2 else 0)
+
+    return touple_array, answer
+            

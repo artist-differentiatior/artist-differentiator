@@ -14,14 +14,14 @@ class Image_Loader:
 
     def __init__(self, image_source, mini_batch_size=3, load_size=3):
 
-            """
+        """
 
-            Args: 
-                image_source: (str) filepath to folder with images to load
-                mini_batch_size: (int) amount of images that should be loaded each iteration
-                load_size: (int) load mode: 3 for triplet, 2 for touple and 1 for regular loading
+        Args: 
+            image_source: (str) filepath to folder with images to load
+            mini_batch_size: (int) amount of images that should be loaded each iteration
+            load_size: (int) load mode: 3 for triplet, 2 for touple and 1 for regular loading
 
-            """
+        """
 
         self.__image_source = image_source
         self.__load_size = load_size
