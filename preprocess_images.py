@@ -13,7 +13,7 @@ IMGS_DIM_2D = (224, 224)
 PREPROCESSED_IMAGE_DIR = "preprocessed_images"
 
 
-def generate_preprocessed_images(source, triplet_array):
+def preprocess_data(source, triplet_array):
 
     """
     Copies images from the source folder and rescale them to size 224x224. These

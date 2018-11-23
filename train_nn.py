@@ -14,13 +14,11 @@ from load_images import *
 import logging
 
 
-#STYLE_LAYERS = ('relu1_1', 'relu2_1')
-#STYLE_LAYERS = ('relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1')
-STYLE_LAYERS = ['relu4_1','relu5_1']
-
+NAME_STYLE_LAYERS = ['relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1']
 PREPROCESSED_PATH = './preprocessed_images/'
 
-def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_name, checkpoints, loss_threshold, positive_weight, batch_size, device_name):
+def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_name, checkpoints, loss_threshold,\
+             positive_weight, batch_size, device_name, style_layers_indices):
 
     """
     Trains the neural net using triplet loss
@@ -32,9 +30,17 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_na
         beta1: (float) momentum parameter for adam optimizer
         beta2: (float) RMSprop parameter for adam optimizer
         epsilon: (float) prevent division with 0 in adaom optimizer
+        save_file_name: (str) name of trained weights
+        checkpoints: (bool) True if resume from checkpoints
+        loss_threshold: (int) Extra threshold in loss function
+        positive_weight: (float) weight for positive distance in loss function
         batch_size: (int) size of mini batches
+        device_name: (str) which device to run computation graph on
+        style_layers_indices: (array) which layers to extract style from
 
     """
+
+    style_layers = [NAME_STYLE_LAYERS[i] for i in style_layers_indices]
 
     parameter_dict = trained_vgg.load_net(network)
     vgg_mean_pixel = parameter_dict['mean_pixel']
@@ -48,12 +54,12 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_na
         positive_net = trained_vgg.net_preloaded(parameter_dict, positive_image, 19)
         negative_net = trained_vgg.net_preloaded(parameter_dict, negative_image, 19)
 
-    anchor_styles = _generate_style(anchor_net, STYLE_LAYERS)
-    positive_styles = _generate_style(positive_net, STYLE_LAYERS)
-    negative_styles = _generate_style(negative_net, STYLE_LAYERS)
+    anchor_styles = _generate_style(anchor_net, style_layers)
+    positive_styles = _generate_style(positive_net, style_layers)
+    negative_styles = _generate_style(negative_net, style_layers)
 
-    dist_p = tf.add_n([tf.reduce_sum((anchor_styles[layer] - positive_styles[layer]) ** 2,[1,2]) for layer in STYLE_LAYERS])
-    dist_n = tf.add_n([tf.reduce_sum((anchor_styles[layer] - negative_styles[layer]) ** 2,[1,2]) for layer in STYLE_LAYERS])
+    dist_p = tf.add_n([tf.reduce_sum((anchor_styles[layer] - positive_styles[layer]) ** 2,[1,2]) for layer in style_layers])
+    dist_n = tf.add_n([tf.reduce_sum((anchor_styles[layer] - negative_styles[layer]) ** 2,[1,2]) for layer in style_layers])
     
     max_sum = tf.maximum(positive_weight*dist_p - dist_n + loss_threshold, 0)
     loss = tf.reduce_sum(max_sum) / batch_size # Divide by batch size
@@ -69,19 +75,13 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_na
     # Initialize image loader
     image_loader = Image_Loader(PREPROCESSED_PATH, batch_size)
 
-    #use just 1 batch
-    #anchor, positive, negative = np.array(image_loader.load_next_batch())
-    #anchor = vgg.preprocess(anchor, vgg_mean_pixel)
-    #negative = vgg.preprocess(positive, vgg_mean_pixel)
-    #positive = vgg.preprocess(negative, vgg_mean_pixel)
-
     saver = tf.train.Saver() 
 
     if not os.path.exists("Log"):
         os.makedirs("Log")
         print("Created directory Log")
 
-    datetime_log = str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    datetime_log = str(datetime.datetime.now().strftime("%Y-%m-%d-%H:%M:%S"))
 
     logging.basicConfig(filename='Log/' + datetime_log + '.log',level=logging.INFO)
     logging.info('Started training: ' + datetime_log)
@@ -89,8 +89,6 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_na
     if not os.path.exists("checkpoints"):
         os.makedirs("checkpoints")
         print("Created directory checkpoints")
-
-        
 
 
     with tf.Session() as sess:
@@ -131,6 +129,7 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_na
             
             iteration_num = 0
             for anchor, positive, negative in tqdm(image_loader):
+                
                 anchor = trained_vgg.preprocess(anchor, vgg_mean_pixel)
                 positive = trained_vgg.preprocess(positive, vgg_mean_pixel)
                 negative = trained_vgg.preprocess(negative, vgg_mean_pixel)

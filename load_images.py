@@ -5,12 +5,25 @@ import sys
 from scipy.misc import imread
 from os import listdir
 
+
 class Image_Loader:
 
-    def __init__(self, image_source, mini_batch_size=3, load_size=3):
-        self.__image_source = image_source
+    """
+    This class is an iterator and its purpose is to load batches with images from a folder.
+    """
 
-        #3 if triplets should be loaded
+    def __init__(self, image_source, mini_batch_size=3, load_size=3):
+
+            """
+
+            Args: 
+                image_source: (str) filepath to folder with images to load
+                mini_batch_size: (int) amount of images that should be loaded each iteration
+                load_size: (int) load mode: 3 for triplet, 2 for touple and 1 for regular loading
+
+            """
+
+        self.__image_source = image_source
         self.__load_size = load_size
 
         try:
@@ -18,6 +31,7 @@ class Image_Loader:
             self.__images.sort()
         except Exception as e:
             print(e)
+
         self.__total_mini_batch_size = self.__load_size*mini_batch_size
         self.__num_mini_batches = int(math.ceil(len(self.__images) / float(self.__total_mini_batch_size)))
         
@@ -63,16 +77,6 @@ class Image_Loader:
 
     def __len__(self):
         return self.__num_mini_batches
-
-
-if __name__ == "__main__":
-
-    print(sys.argv[1])
-    image_loader = Image_Loader(sys.argv[1], triplet=False)
-    
-
-    for mini_batch in image_loader:
-        anchors, positives = mini_batch
 
 
 
