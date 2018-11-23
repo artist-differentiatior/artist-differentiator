@@ -19,13 +19,12 @@ from load_images import *
 
 #STYLE_LAYERS = ('relu1_1', 'relu2_1')
 #STYLE_LAYERS = ('relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1')
-STYLE_LAYERS = ( 'relu4_1', 'relu5_1')
+STYLE_LAYERS = ['relu5_1']
 
-VGG_PATH = 'vgg_net_original.mat'
 CSV_FILE_PATH = 'new_train_info.csv'
 PCA_PATH = 'pca_images/'
 PREPROCESSED_PATH = 'preprocessed_images/'
-ORIGINAL_FILE_PATH = 'sample_images/'
+ORIGINAL_FILE_PATH = '3_artists_10_paintings/'
 
 
 
@@ -51,6 +50,7 @@ def apply_pca(weight_path, preprocessed_path=PREPROCESSED_PATH):
     print('Copying images to: ' + PCA_PATH)
     pca_files_dict, n_paintings_dict = _create_dir_for_pca(preprocessed_path, PCA_PATH)
     artists = n_paintings_dict.keys()
+    print(n_paintings_dict)
     
     print('Building net...')
     parameter_dict = trained_vgg.load_net(weight_path)
@@ -125,7 +125,9 @@ def apply_pca(weight_path, preprocessed_path=PREPROCESSED_PATH):
 
         i += 1
     plt.legend()
-    plt.show()
+
+    #plt.show()
+    plt.savefig('test.pdf')
 
     
             
@@ -153,8 +155,18 @@ def _create_dir_for_pca(preprocessed_path, pca_path):
     
     total_nr_paintings = 0
     for artist, paintings_by_artist in filename_dict.iteritems():
-        total_nr_paintings += len(paintings_by_artist)
-        n_paintings_dict[artist] = len(paintings_by_artist)
+        nr_paintings_by_artist = 0
+
+        for painting_name in paintings_by_artist:
+            for file in os.listdir(preprocessed_path):
+		if painting_name in file:	
+                	nr_paintings_by_artist += 1
+			break
+        
+                
+        total_nr_paintings += nr_paintings_by_artist
+        if nr_paintings_by_artist != 0:
+            n_paintings_dict[artist] = nr_paintings_by_artist
         
     i = 1
     for artist, paintings_by_artist in filename_dict.iteritems(): # Iterate over all artists

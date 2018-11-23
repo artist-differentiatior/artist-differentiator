@@ -13,7 +13,8 @@ import trained_vgg
 from load_images import *
 
 #STYLE_LAYERS = ('relu1_1', 'relu2_1')
-STYLE_LAYERS = ('relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1')
+#STYLE_LAYERS = ('relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1')
+STYLE_LAYERS = ['relu5_1']
 VGG_PATH = 'vgg_net_original.mat'
 
 
