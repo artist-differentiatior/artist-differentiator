@@ -47,7 +47,7 @@ def _parse_info_file(csv_file_path, paintings_file_path):
         
     return artist_dict
 
-def generate_triplets(csv_file_path, paintings_file_path, num_anchors=3):
+def generate_triplets(csv_file_path, paintings_file_path, num_anchors=10):
 
     '''
     Generates triplets from .cvs file in csv_file_path.
@@ -71,7 +71,7 @@ def generate_triplets(csv_file_path, paintings_file_path, num_anchors=3):
             anchor_file_name = painting # Pick current painting as anchor
             
             while True:
-                indices = np.random.randint(0,len(paintings_by_artist), 3)
+                indices = np.random.randint(0,len(paintings_by_artist), 10)
                 if index not in indices:
                     break
 
