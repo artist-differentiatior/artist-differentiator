@@ -2,7 +2,8 @@ import os
 import time
 import datetime
 from collections import OrderedDict
-from tqdm import tqdm # progressbar
+from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 from PIL import Image
 import numpy as np
@@ -50,9 +51,9 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_na
     negative_image = tf.placeholder('float', shape=(None, 224,224,3))
     
     with tf.variable_scope("net", reuse=tf.AUTO_REUSE), tf.device(device_name):
-        anchor_net = trained_vgg.net_preloaded(parameter_dict, anchor_image, 19)
-        positive_net = trained_vgg.net_preloaded(parameter_dict, positive_image, 19)
-        negative_net = trained_vgg.net_preloaded(parameter_dict, negative_image, 19)
+        anchor_net = trained_vgg.net_preloaded(parameter_dict, anchor_image, 0)
+        positive_net = trained_vgg.net_preloaded(parameter_dict, positive_image, 0)
+        negative_net = trained_vgg.net_preloaded(parameter_dict, negative_image, 0)
 
     anchor_styles = _generate_style(anchor_net, style_layers)
     positive_styles = _generate_style(positive_net, style_layers)
@@ -105,6 +106,7 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_na
         
 
         print('Optimization started...')
+	cost_data = []
         epoch_times = []
         start = time.time()
 
@@ -135,20 +137,18 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_na
                 negative = trained_vgg.preprocess(negative, vgg_mean_pixel)
 
                 cost, _ = sess.run([loss, train_step], feed_dict={anchor_image : anchor, positive_image: positive, negative_image: negative})
+		
+		        cost_data.append(cost)
 
                 iteration_num += 1
                 logging.info("Epoch: " + str(i + 1) + "/" + str(epochs) + \
                              " Iteration: " + str(iteration_num) + "/" + str(len(image_loader)) + \
                              " Cost: " + str(cost))
 
-                if checkpoint_counter == 4:
-                    save_path = saver.save(sess, "checkpoints/model.ckpt")
-                    #print("Model saved in path: %s" % save_path)
-                    checkpoint_counter = 0
-                else:
-                    checkpoint_counter += 1
 
-            print('Cost: %e' % cost)
+            save_path = saver.save(sess, "checkpoints/model.ckpt")
+    	    plt.plot(cost_data)
+	        plt.savefig('cost_fig.pdf')
           
             epoch_end = time.time()
             epoch_times.append(epoch_end - epoch_start)

@@ -3,8 +3,10 @@ import time
 from shutil import copy2
 from collections import OrderedDict
 import csv
+from argparse import ArgumentParser
 
 from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 
 from tqdm import tqdm # progressbar
@@ -19,17 +21,17 @@ from load_images import *
 
 #STYLE_LAYERS = ('relu1_1', 'relu2_1')
 #STYLE_LAYERS = ('relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1')
-STYLE_LAYERS = ( 'relu4_1', 'relu5_1')
+#STYLE_LAYERS = ( 'relu4_1', 'relu5_1')
+STYLE_LAYERS = ['relu5_1']
 
-VGG_PATH = 'vgg_net_original.mat'
 CSV_FILE_PATH = 'new_train_info.csv'
 PCA_PATH = 'pca_images/'
 PREPROCESSED_PATH = 'preprocessed_images/'
-ORIGINAL_FILE_PATH = 'sample_images/'
+ORIGINAL_FILE_PATH = '3_artists_10_paintings/'
 
 
 
-def apply_pca(weight_path, preprocessed_path=PREPROCESSED_PATH):
+def apply_pca(weight_path, preprocessed_path, csv_file_path, pca_path, original_file_path):
 
     """
     Trains the neural net using triplet loss
@@ -49,8 +51,14 @@ def apply_pca(weight_path, preprocessed_path=PREPROCESSED_PATH):
         parser.error("Network %s does not exist. (Did you forget to download it?)" % VGG_PATH)
 
     print('Copying images to: ' + PCA_PATH)
-    pca_files_dict, n_paintings_dict = _create_dir_for_pca(preprocessed_path, PCA_PATH)
-    artists = n_paintings_dict.keys()
+
+    if not os.path.isfile(pca_path):
+        n_paintings_dict = _create_dir_for_pca(preprocessed_path, pca_path, csv_file_path, original_file_path)
+        artists = n_paintings_dict.keys()
+    else:
+        n_paintings_dict = _get_n_paintings(preprocessed_path, pca_path, csv_file_path, original_file_path)
+        artists = n_paintings_dict.keys()
+
     
     print('Building net...')
     parameter_dict = trained_vgg.load_net(weight_path)
@@ -68,7 +76,7 @@ def apply_pca(weight_path, preprocessed_path=PREPROCESSED_PATH):
     gram_data = {}
 
     # Initialize image loader
-    image_loader = Image_Loader(PCA_PATH, 1, load_size=1)
+    image_loader = Image_Loader(pca_path, 1, load_size=1)
 
     #saver = tf.train.Saver()
 
@@ -118,14 +126,17 @@ def apply_pca(weight_path, preprocessed_path=PREPROCESSED_PATH):
     i = 1
     print('Computing PCA...')
     for artist, gram in gram_data.iteritems():
-        pca_out = np.array(pca.fit_transform(gram))
+        standard_gram = StandardScaler().fit_transform(gram)
+        pca_out = np.array(pca.fit_transform(standard_gram))
         pca_out = pca_out.T # Transpose to get shape (2, n_points) 
     
         plt.scatter(pca_out[0], pca_out[1], c=colors[i-1], label='Artist ' + str(i))
 
         i += 1
     plt.legend()
-    plt.show()
+
+    #plt.show()
+    plt.savefig('test.pdf')
 
     
             
@@ -140,21 +151,30 @@ def _generate_style(net, style_layers):
 
     return styles
 
-def _create_dir_for_pca(preprocessed_path, pca_path):
+def _create_dir_for_pca(preprocessed_path, pca_path, csv_file_path, original_file_path):
     """
     Parses csv-file and creates directory with all preprocessed images in order of artist
     """
 
-    filename_dict, n_paintings = _parse_info_file(CSV_FILE_PATH, ORIGINAL_FILE_PATH)
+    filename_dict, n_paintings = _parse_info_file(csv_file_path, original_file_path)
 
-    pca_files_dict = {}
     n_paintings_dict = {}
     files_covered = []
     
     total_nr_paintings = 0
     for artist, paintings_by_artist in filename_dict.iteritems():
-        total_nr_paintings += len(paintings_by_artist)
-        n_paintings_dict[artist] = len(paintings_by_artist)
+        nr_paintings_by_artist = 0
+
+        for painting_name in paintings_by_artist:
+            for file in os.listdir(preprocessed_path):
+		if painting_name in file:	
+                	nr_paintings_by_artist += 1
+			break
+        
+                
+        total_nr_paintings += nr_paintings_by_artist
+        if nr_paintings_by_artist != 0:
+            n_paintings_dict[artist] = nr_paintings_by_artist
         
     i = 1
     for artist, paintings_by_artist in filename_dict.iteritems(): # Iterate over all artists
@@ -179,17 +199,25 @@ def _create_dir_for_pca(preprocessed_path, pca_path):
                     
                     copy2(src, dest) # copy the file to new dir
                         
-                    if artist not in pca_files_dict: # Add this file to the pca files 
-                        pca_files_dict[artist] = [new_filename]
-                    else:
-                        pca_files_dict[artist].append(new_filename)
-                        
                     i += 1
                     files_covered.append(painting_name)
 
             
-    return pca_files_dict, n_paintings_dict
+    return n_paintings_dict
 
+
+def _get_n_paintings(preprocessed_path, pca_path, csv_file_path, original_file_path):
+
+    filename_dict, n_paintings = _parse_info_file(csv_file_path, original_file_path)
+
+    n_paintings_dict = {}
+    
+    total_nr_paintings = 0
+    for artist, paintings_by_artist in filename_dict.iteritems():
+        total_nr_paintings += len(paintings_by_artist)
+        n_paintings_dict[artist] = len(paintings_by_artist)
+
+    return n_paintings_dict
     
         
 def _parse_info_file(csv_file_path, original_paintings_file_path):
@@ -233,11 +261,37 @@ def _parse_info_file(csv_file_path, original_paintings_file_path):
 
         
     return artist_dict, n_paintings
-    
+
+def build_parser():
+    parser = ArgumentParser()
+    parser.add_argument('--weights',
+            dest='weights', help='path to network weights (.mat file) (default %(default)s)',
+                        metavar='WEIGHTS', default=VGG_PATH)
+    parser.add_argument('--csv',
+            dest='csv_file_path', help='path to csv-file (default %(default)s)',
+                        metavar='VGG_PATH', default=CSV_FILE_PATH)
+    parser.add_argument('--dest',
+            dest='pca_path', help='path to write pca version of images (default %(default)s)',
+                        metavar='PCA_PATH', default=PCA_PATH)
+    parser.add_argument('--preprocessed-path',
+            dest='preprocessed_path', help='path to preprocessed images (default %(default)s)',
+                        metavar='PREPROCESSED_PATH', default=PREPROCESSED_PATH)
+    parser.add_argument('--original',
+            dest='original_file_path', help='path to original images (default %(default)s)',
+                        metavar='ORIGINAL_FILE_PATH', default=ORIGINAL_FILE_PATH)
+
+    return parser
 
 if __name__ == "__main__":
 
-    if len(sys.argv)==3:
-        apply_pca(sys.argv[1], sys.argv[2])
-    else:
-        apply_pca(sys.argv[1])
+    parser = build_parser()
+    options = parser.parse_args()
+    
+
+    apply_pca(
+       options.weights,
+       options.preprocessed_path,
+       options.csv_file_path,
+       options.pca_path,
+       options.original_file_path
+    )

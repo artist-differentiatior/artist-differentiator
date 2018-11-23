@@ -4,9 +4,9 @@ artist_differentiator
 venv
 .*
 learn_tf
-test.jpg
+*.jpg
 *.csv
-preprocessed_images
+preprocessed_images*
 sample_triplet
 sample_images
 pca_images
@@ -17,3 +17,7 @@ checkpoints/
 test_images/
 *test*
 Log/
+*paintings*
+*data*
+*.pdf
+*.save

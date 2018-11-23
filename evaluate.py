@@ -13,7 +13,8 @@ import trained_vgg
 from load_images import *
 
 #STYLE_LAYERS = ('relu1_1', 'relu2_1')
-STYLE_LAYERS = ('relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1')
+#STYLE_LAYERS = ('relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1')
+STYLE_LAYERS = ['relu5_1']
 VGG_PATH = 'vgg_net_original.mat'
 
 
@@ -59,10 +60,13 @@ def evaluate(test_path, weight_path):
     avg_dist_AN = parameter_dict['avg_dist_AN']
     print('Average distance AP: %e' % avg_dist_AP)
     print('Average distance AN: %e'% avg_dist_AN)
+    harmonic_mean_threshold = 2*avg_dist_AP*avg_dist_AN/(avg_dist_AP + avg_dist_AN)
 
     prediction = []
 
     #saver = tf.train.Saver()
+
+    print('Harmonic mean:', harmonic_mean_threshold)
 
     with tf.Session() as sess:
 
@@ -77,12 +81,11 @@ def evaluate(test_path, weight_path):
             diff_dist_AP = np.abs(dist - avg_dist_AP)
             diff_dist_AN = np.abs(dist - avg_dist_AN)
 
-            print('diff_dist_AP: %e' % diff_dist_AP)
-            print('diff_dist_AN: %e' % diff_dist_AN)
+            #print('diff_dist_AP: %e' % diff_dist_AP)
+            #print('diff_dist_AN: %e' % diff_dist_AN)
 
-
-
-            if diff_dist_AP <= diff_dist_AN:
+            
+            if dist <= harmonic_mean_threshold:
                 prediction.append(1)
             else:
                 prediction.append(0)
