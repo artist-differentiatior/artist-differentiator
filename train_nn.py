@@ -53,14 +53,15 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_na
     positive_styles = _generate_style(positive_net, STYLE_LAYERS)
     negative_styles = _generate_style(negative_net, STYLE_LAYERS)
 
-    dist_p = tf.add_n([tf.reduce_sum((anchor_styles[layer] - positive_styles[layer]) ** 2,[1,2]) for layer in STYLE_LAYERS])
-    dist_n = tf.add_n([tf.reduce_sum((anchor_styles[layer] - negative_styles[layer]) ** 2,[1,2]) for layer in STYLE_LAYERS])
+    loss_sum = tf.add_n([tf.reduce_sum(tf.maximum(positive_weight*(anchor_styles[layer] - positive_styles[layer])**2 -
+                                                (anchor_styles[layer] - negative_styles[layer])**2 + loss_threshold, 0),[1,2]) for layer in STYLE_LAYERS])
     
-    max_sum = tf.maximum(positive_weight*dist_p - dist_n + loss_threshold, 0)
-    loss = tf.reduce_sum(max_sum) / batch_size # Divide by batch size
+    loss = tf.reduce_sum(loss_sum) / batch_size # Divide by batch size
 
 
     # Used to compute threshold for evaluating on pairs of images
+    dist_p = tf.add_n([tf.reduce_sum((anchor_styles[layer] - positive_styles[layer]) ** 2,[1,2]) for layer in STYLE_LAYERS])
+    dist_n = tf.add_n([tf.reduce_sum((anchor_styles[layer] - negative_styles[layer]) ** 2,[1,2]) for layer in STYLE_LAYERS])
     batch_avg_dist_AP = tf.reduce_sum(dist_p) / batch_size
     batch_avg_dist_AN = tf.reduce_sum(dist_n) / batch_size
 
