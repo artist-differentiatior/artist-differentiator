@@ -21,3 +21,8 @@ Log/
 *data*
 *.pdf
 *.save
+
+train_data
+dev_data
+test_data
+*answer*
