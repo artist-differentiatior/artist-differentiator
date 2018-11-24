@@ -1,24 +1,40 @@
 import os
 import time
-from collections import OrderedDict
-
-#from tqdm import tqdm # progressbar
-
-from PIL import Image
 import numpy as np
 import tensorflow as tf
 
 import trained_vgg
 
-from load_images import *
+from load_images import Image_Loader
+from collections import OrderedDict
+from argparse import ArgumentParser
+from tqdm import tqdm
+from PIL import Image
 
-#STYLE_LAYERS = ('relu1_1', 'relu2_1')
-#STYLE_LAYERS = ('relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1')
-STYLE_LAYERS = ['relu5_1']
+NAME_STYLE_LAYERS = ['relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1']
 VGG_PATH = 'vgg_net_original.mat'
 
 
-def evaluate(test_path, weight_path):
+def build_parser():
+
+    parser = ArgumentParser()
+    parser.add_argument('--test-path',
+        dest='test_path', help='Path to folder with images to test on',
+            metavar='TEST_PATH', required=True)
+    parser.add_argument('--weight-path',
+        dest='weight_path', help='Path to weights',
+            metavar='WEIGHT_PATH', required=True)
+    parser.add_argument('--style-layers-indices', type=list,
+        dest='style_layers_indices', help='Which layers to use(0-4)',
+            metavar='STYLE_LAYERS_INDICES', default=[3,4])
+    parser.add_argument('--triplet', type=bool,
+        dest='triplet', help='If triplet or touple',
+            metavar='TRIPLET', default=False)
+
+    return parser
+
+
+def evaluate(test_path, weight_path, style_layers_indices, triplet):
 
     """
     Trains the neural net using triplet loss
@@ -34,6 +50,8 @@ def evaluate(test_path, weight_path):
 
     """
 
+    style_layers = [NAME_STYLE_LAYERS[i] for i in style_layers_indices]
+
     if not os.path.isfile(weight_path):
         parser.error("Network %s does not exist. (Did you forget to download it?)" % VGG_PATH)
 
@@ -47,14 +65,17 @@ def evaluate(test_path, weight_path):
         image_1_net = trained_vgg.net_preloaded(parameter_dict, image_1)
         image_2_net = trained_vgg.net_preloaded(parameter_dict, image_2)
 
-    image_1_styles = _generate_style(image_1_net, STYLE_LAYERS)
-    image_2_styles = _generate_style(image_2_net, STYLE_LAYERS)
+    image_1_styles = _generate_style(image_1_net, style_layers)
+    image_2_styles = _generate_style(image_2_net, style_layers)
 
-    compute_dist = tf.add_n([tf.reduce_sum((image_1_styles[layer] - image_2_styles[layer]) ** 2,[1,2]) for layer in STYLE_LAYERS])
+    compute_dist = tf.add_n([tf.reduce_sum((image_1_styles[layer] - image_2_styles[layer]) ** 2,[1,2]) for layer in style_layers])
 
     
     # Initialize image loader
-    image_loader = Image_Loader(test_path, 1, load_size=2)
+    if not triplet:
+        image_loader = Image_Loader(test_path, 1, load_size=2)
+    else:
+        image_loader = Image_Loader(test_path, 1, load_size=3)
 
     avg_dist_AP = parameter_dict['avg_dist_AP']
     avg_dist_AN = parameter_dict['avg_dist_AN']
@@ -71,26 +92,47 @@ def evaluate(test_path, weight_path):
     with tf.Session() as sess:
 
         sess.run(tf.global_variables_initializer())
-        for img1, img2 in image_loader:
+        if triplet:
 
-            img1 = trained_vgg.preprocess(img1, vgg_mean_pixel)
-            img2 = trained_vgg.preprocess(img2, vgg_mean_pixel)
+            for img1, img2, img3 in image_loader:
 
-            dist = sess.run(compute_dist, feed_dict={image_1 : img1, image_2: img2})
+                img1 = trained_vgg.preprocess(img1, vgg_mean_pixel)
+                img2 = trained_vgg.preprocess(img2, vgg_mean_pixel)
+                img3 = trained_vgg.preprocess(img2, vgg_mean_pixel)
 
-            diff_dist_AP = np.abs(dist - avg_dist_AP)
-            diff_dist_AN = np.abs(dist - avg_dist_AN)
+                dist1 = sess.run(compute_dist, feed_dict={image_1 : img1, image_2: img2})
 
-            #print('diff_dist_AP: %e' % diff_dist_AP)
-            #print('diff_dist_AN: %e' % diff_dist_AN)
+                if dist1 <= harmonic_mean_threshold:
+                    prediction.append(1)
+                else:
+                    prediction.append(0)
 
-            
-            if dist <= harmonic_mean_threshold:
-                prediction.append(1)
-            else:
-                prediction.append(0)
+                print(dist1)
 
-            print(dist)
+                dist2 = sess.run(compute_dist, feed_dict={image_1 : img1, image_2: img3})
+                
+                if dist2 <= harmonic_mean_threshold:
+                    prediction.append(1)
+                else:
+                    prediction.append(0)
+
+                print(dist2)
+
+        else:
+
+            for img1, img2 in image_loader:
+
+                img1 = trained_vgg.preprocess(img1, vgg_mean_pixel)
+                img2 = trained_vgg.preprocess(img2, vgg_mean_pixel)
+
+                dist = sess.run(compute_dist, feed_dict={image_1 : img1, image_2: img2})
+                
+                if dist <= harmonic_mean_threshold:
+                    prediction.append(1)
+                else:
+                    prediction.append(0)
+
+                print(dist)
             
         print('Prediction:' + str(prediction))
 
@@ -107,7 +149,16 @@ def _generate_style(net, style_layers):
 
     return styles
 
-if __name__ == "__main__":
+def main():
+    parser = build_parser()
+    options = parser.parse_args()
 
-    evaluate(sys.argv[1], sys.argv[2])
-    
+    evaluate(test_path=options.test_path,
+             weight_path=options.weight_path,
+             style_layers_indices=options.style_layers_indices,
+             triplet=options.triplet)
+
+
+if __name__ == "__main__":
+    main()
+
