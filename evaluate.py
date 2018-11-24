@@ -1,22 +1,40 @@
 import os
 import time
-from collections import OrderedDict
-
-from tqdm import tqdm
-
-from PIL import Image
 import numpy as np
 import tensorflow as tf
 
 import trained_vgg
 
-from load_images import *
+from load_images import Image_Loader
+from collections import OrderedDict
+from argparse import ArgumentParser
+from tqdm import tqdm
+from PIL import Image
 
 NAME_STYLE_LAYERS = ['relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1']
 VGG_PATH = 'vgg_net_original.mat'
 
 
-def evaluate(test_path, weight_path, style_layers_indices, triplet=False):
+def build_parser():
+
+    parser = ArgumentParser()
+    parser.add_argument('--test-path',
+        dest='test_path', help='Path to folder with images to test on',
+            metavar='TEST_PATH', required=True)
+    parser.add_argument('--weight-path',
+        dest='weight_path', help='Path to weights',
+            metavar='WEIGHT_PATH', required=True)
+    parser.add_argument('--style-layers-indices', type=list,
+        dest='style_layers_indices', help='Which layers to use(0-4)',
+            metavar='STYLE_LAYERS_INDICES', default=[3,4])
+    parser.add_argument('--triplet', type=bool,
+        dest='triplet', help='If triplet or touple',
+            metavar='TRIPLET', default=False)
+
+    return parser
+
+
+def evaluate(test_path, weight_path, style_layers_indices, triplet):
 
     """
     Trains the neural net using triplet loss
@@ -47,10 +65,10 @@ def evaluate(test_path, weight_path, style_layers_indices, triplet=False):
         image_1_net = trained_vgg.net_preloaded(parameter_dict, image_1)
         image_2_net = trained_vgg.net_preloaded(parameter_dict, image_2)
 
-    image_1_styles = _generate_style(image_1_net, style_layer)
-    image_2_styles = _generate_style(image_2_net, style_layer)
+    image_1_styles = _generate_style(image_1_net, style_layers)
+    image_2_styles = _generate_style(image_2_net, style_layers)
 
-    compute_dist = tf.add_n([tf.reduce_sum((image_1_styles[layer] - image_2_styles[layer]) ** 2,[1,2]) for layer in style_layer])
+    compute_dist = tf.add_n([tf.reduce_sum((image_1_styles[layer] - image_2_styles[layer]) ** 2,[1,2]) for layer in style_layers])
 
     
     # Initialize image loader
@@ -76,7 +94,7 @@ def evaluate(test_path, weight_path, style_layers_indices, triplet=False):
         sess.run(tf.global_variables_initializer())
         if triplet:
 
-            for img1, img2, img3 in tqdm(image_loader):
+            for img1, img2, img3 in image_loader:
 
                 img1 = trained_vgg.preprocess(img1, vgg_mean_pixel)
                 img2 = trained_vgg.preprocess(img2, vgg_mean_pixel)
@@ -91,7 +109,7 @@ def evaluate(test_path, weight_path, style_layers_indices, triplet=False):
 
                 print(dist1)
 
-                dist2 = sess.run(compute_dist, feed_dict={image_1 : img1, image_2: img2})
+                dist2 = sess.run(compute_dist, feed_dict={image_1 : img1, image_2: img3})
                 
                 if dist2 <= harmonic_mean_threshold:
                     prediction.append(1)
@@ -102,7 +120,7 @@ def evaluate(test_path, weight_path, style_layers_indices, triplet=False):
 
         else:
 
-            for img1, img2 in tqdm(image_loader):
+            for img1, img2 in image_loader:
 
                 img1 = trained_vgg.preprocess(img1, vgg_mean_pixel)
                 img2 = trained_vgg.preprocess(img2, vgg_mean_pixel)
@@ -131,7 +149,16 @@ def _generate_style(net, style_layers):
 
     return styles
 
-if __name__ == "__main__":
+def main():
+    parser = build_parser()
+    options = parser.parse_args()
 
-    evaluate(sys.argv[1], sys.argv[2])
-    
+    evaluate(test_path=options.test_path,
+             weight_path=options.weight_path,
+             style_layers_indices=options.style_layers_indices,
+             triplet=options.triplet)
+
+
+if __name__ == "__main__":
+    main()
+
