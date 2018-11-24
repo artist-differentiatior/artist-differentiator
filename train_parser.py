@@ -59,9 +59,9 @@ def build_parser():
     parser.add_argument('--loss-threshold', type=int,
             dest='loss_threshold', help='mini batch size (default %(default)s)',
             metavar='LOSS_THRESHOLD', default=LOSS_THRESHOLD)
-    parser.add_argument('--style-layers-indices', type=list,
-            dest='style_layers_indices', help='Which of the 5(index 0-4) style layers to use (default %(default)s)',
-            metavar='LOSS_THRESHOLD', default=[3,4])
+    parser.add_argument('--style-layers-indices', nargs='+', type=int,
+            dest='style_layers_indices', help='Which of the 5 (index 0-4) style layers to use (default %(default)s)',
+                        metavar='STYLE_LAYERS_INDICES', default=[3,4])
     
     return parser
 

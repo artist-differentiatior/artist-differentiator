@@ -16,7 +16,7 @@ import logging
 
 
 NAME_STYLE_LAYERS = ['relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1']
-PREPROCESSED_PATH = './train_data/'
+PREPROCESSED_PATH = './preprocessed_images/'
 
 def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_name, checkpoints, loss_threshold,\
              positive_weight, batch_size, device_name, style_layers_indices):
@@ -59,12 +59,10 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_na
     positive_styles = _generate_style(positive_net, style_layers)
     negative_styles = _generate_style(negative_net, style_layers)
 
-    loss_sum = tf.add_n([tf.reduce_sum(tf.maximum(positive_weight*(anchor_styles[layer] - positive_styles[layer])**2 -
-                                                (anchor_styles[layer] - negative_styles[layer])**2 + loss_threshold, 0),[1,2]) for layer in style_layers])
+    loss_sum = tf.add_n([tf.maximum(tf.reduce_sum(positive_weight*(anchor_styles[layer] - positive_styles[layer])**2 -
+                                                  (anchor_styles[layer] - negative_styles[layer])**2, [1,2]) + loss_threshold, 0) for layer in style_layers])
+    loss = tf.reduce_sum(loss_sum)/batch_size
     
-    loss = tf.reduce_sum(loss_sum) / batch_size # Divide by batch size
-
-
     # Used to compute threshold for evaluating on pairs of images
     dist_p = tf.add_n([tf.reduce_sum((anchor_styles[layer] - positive_styles[layer]) ** 2,[1,2]) for layer in style_layers])
     dist_n = tf.add_n([tf.reduce_sum((anchor_styles[layer] - negative_styles[layer]) ** 2,[1,2]) for layer in style_layers])
