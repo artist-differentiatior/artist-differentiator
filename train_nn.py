@@ -16,7 +16,7 @@ import logging
 
 
 NAME_STYLE_LAYERS = ['relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1']
-PREPROCESSED_PATH = './preprocessed_images/'
+PREPROCESSED_PATH = './preprocessed_images_3_artists_train/'
 
 def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_name, checkpoints, loss_threshold,\
              positive_weight, batch_size, device_name, style_layers_indices):
