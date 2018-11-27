@@ -2,6 +2,7 @@ import os
 import time
 import numpy as np
 import tensorflow as tf
+import ast
 
 import trained_vgg
 
@@ -10,6 +11,8 @@ from collections import OrderedDict
 from argparse import ArgumentParser
 from tqdm import tqdm
 from PIL import Image
+
+from sklearn.metrics import f1_score
 
 NAME_STYLE_LAYERS = ['relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1']
 VGG_PATH = 'vgg_net_original.mat'
@@ -24,17 +27,17 @@ def build_parser():
     parser.add_argument('--weight-path',
         dest='weight_path', help='Path to weights',
             metavar='WEIGHT_PATH', required=True)
-    parser.add_argument('--style-layers-indices', type=list,
+    parser.add_argument('--style-layers-indices', nargs='+', type=int,
         dest='style_layers_indices', help='Which layers to use(0-4)',
             metavar='STYLE_LAYERS_INDICES', default=[3,4])
-    parser.add_argument('--triplet', type=bool,
-        dest='triplet', help='If triplet or touple',
-            metavar='TRIPLET', default=False)
+    parser.add_argument('--type', type=str,
+                        dest='type', help='What type of data is evaluated on (train, dev or test)',
+                        metavar='TYPE', default='test')
 
     return parser
 
 
-def evaluate(test_path, weight_path, style_layers_indices, triplet):
+def evaluate(test_path, weight_path, style_layers_indices, type):
 
     """
     Trains the neural net using triplet loss
@@ -72,27 +75,29 @@ def evaluate(test_path, weight_path, style_layers_indices, triplet):
 
     
     # Initialize image loader
-    if not triplet:
+    if type != 'train':
         image_loader = Image_Loader(test_path, 1, load_size=2)
     else:
         image_loader = Image_Loader(test_path, 1, load_size=3)
 
     avg_dist_AP = parameter_dict['avg_dist_AP']
     avg_dist_AN = parameter_dict['avg_dist_AN']
-    print('Average distance AP: %e' % avg_dist_AP)
-    print('Average distance AN: %e'% avg_dist_AN)
+
     harmonic_mean_threshold = 2*avg_dist_AP*avg_dist_AN/(avg_dist_AP + avg_dist_AN)
 
     prediction = []
 
     #saver = tf.train.Saver()
 
-    print('Harmonic mean:', harmonic_mean_threshold)
-
     with tf.Session() as sess:
 
+        print('Computing distances...')
+
         sess.run(tf.global_variables_initializer())
-        if triplet:
+
+        if type == 'train':
+
+            answer = [1, 0] * len(image_loader)
 
             for img1, img2, img3 in image_loader:
 
@@ -120,6 +125,15 @@ def evaluate(test_path, weight_path, style_layers_indices, triplet):
 
         else:
 
+            if type == 'dev':
+                with open('dev_answer.txt', 'r') as dev_answer_file:
+                    answer = ast.literal_eval(dev_answer_file.readline())
+            elif type == 'test':
+                with open('test_answer.txt', 'r') as test_answer_file:
+                    answer = ast.literal_eval(test_answer_file.readline())
+                
+            
+
             for img1, img2 in image_loader:
 
                 img1 = trained_vgg.preprocess(img1, vgg_mean_pixel)
@@ -133,8 +147,17 @@ def evaluate(test_path, weight_path, style_layers_indices, triplet):
                     prediction.append(0)
 
                 print(dist)
-            
-        print('Prediction:' + str(prediction))
+
+
+        f1_accuracy = f1_score(answer, prediction)
+
+        
+        print('Average distance AP: %e' % avg_dist_AP)
+        print('Average distance AN: %e'% avg_dist_AN)
+        print('Harmonic mean: %e' % harmonic_mean_threshold)        
+        print('Answer    : ' + str(answer))
+        print('Prediction: ' + str(prediction))
+        print('F1 Score: %f' % f1_accuracy)
 
     
             
@@ -152,11 +175,14 @@ def _generate_style(net, style_layers):
 def main():
     parser = build_parser()
     options = parser.parse_args()
+    
+    if options.type not in ['train', 'dev', 'test']:
+        raise ValueError('Invalid type of data. Choose test, dev or train')
 
     evaluate(test_path=options.test_path,
              weight_path=options.weight_path,
              style_layers_indices=options.style_layers_indices,
-             triplet=options.triplet)
+             type=options.type)
 
 
 if __name__ == "__main__":
