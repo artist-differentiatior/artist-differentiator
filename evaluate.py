@@ -83,7 +83,9 @@ def evaluate(test_path, weight_path, style_layers_indices, type):
     avg_dist_AP = parameter_dict['avg_dist_AP']
     avg_dist_AN = parameter_dict['avg_dist_AN']
 
-    harmonic_mean_threshold = 2*avg_dist_AP*avg_dist_AN/(avg_dist_AP + avg_dist_AN)
+    #harmonic_mean_threshold = 2*avg_dist_AP*avg_dist_AN/(avg_dist_AP + avg_dist_AN)
+    harmonic_mean_threshold = (avg_dist_AP+avg_dist_AN)/2
+
 
     prediction = []
 
@@ -99,7 +101,7 @@ def evaluate(test_path, weight_path, style_layers_indices, type):
 
             answer = [1, 0] * len(image_loader)
 
-            for img1, img2, img3 in image_loader:
+            for img1, img2, img3 in tqdm(image_loader):
 
                 img1 = trained_vgg.preprocess(img1, vgg_mean_pixel)
                 img2 = trained_vgg.preprocess(img2, vgg_mean_pixel)
@@ -112,7 +114,7 @@ def evaluate(test_path, weight_path, style_layers_indices, type):
                 else:
                     prediction.append(0)
 
-                print(dist1)
+                #print(dist1)
 
                 dist2 = sess.run(compute_dist, feed_dict={image_1 : img1, image_2: img3})
                 
@@ -121,7 +123,7 @@ def evaluate(test_path, weight_path, style_layers_indices, type):
                 else:
                     prediction.append(0)
 
-                print(dist2)
+                #print(dist2)
 
         else:
 
@@ -134,7 +136,7 @@ def evaluate(test_path, weight_path, style_layers_indices, type):
                 
             
 
-            for img1, img2 in image_loader:
+            for img1, img2 in tqdm(image_loader):
 
                 img1 = trained_vgg.preprocess(img1, vgg_mean_pixel)
                 img2 = trained_vgg.preprocess(img2, vgg_mean_pixel)
@@ -146,7 +148,7 @@ def evaluate(test_path, weight_path, style_layers_indices, type):
                 else:
                     prediction.append(0)
 
-                print(dist)
+                #print(dist)
 
 
         f1_accuracy = f1_score(answer, prediction)

@@ -47,7 +47,7 @@ def preprocess_data(source, info_file, num_anchors, test_dev_ratio):
         info_file: (str) path to csv file contatining information about images in source directory
     """
 
-    #_create_directory(TRAIN_DIR)
+    _create_directory(TRAIN_DIR)
 
     artist_dict = util.parse_info_file(info_file, source)
 
@@ -70,7 +70,6 @@ def preprocess_data(source, info_file, num_anchors, test_dev_ratio):
         _preprocess_images(source, touple_array, TEST_DIR, 2)
         _write("test_answer", str(answer))
         print("test_data complete!")
-        exit()
 
     triplets_array = util.generate_triplets(train_dict, num_anchors)
     _preprocess_images(source, triplets_array, TRAIN_DIR, 3)
