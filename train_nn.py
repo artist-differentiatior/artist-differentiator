@@ -154,20 +154,20 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_na
 
         print('Training completed. Computing mean distances...')
 
-        avg_dist_AP = 0
-        avg_dist_AN = 0
+        sum_avg_dist_AP = 0
+        sum_avg_dist_AN = 0
         for anchor, positive, negative in tqdm(image_loader):
 
             anchor = trained_vgg.preprocess(anchor, vgg_mean_pixel)
             positive = trained_vgg.preprocess(positive, vgg_mean_pixel)
             negative = trained_vgg.preprocess(negative, vgg_mean_pixel)
 
-            avg_dist_AP += sess.run(batch_avg_dist_AP, feed_dict={anchor_image : anchor, positive_image: positive})
-            avg_dist_AN += sess.run(batch_avg_dist_AN, feed_dict={anchor_image : anchor, negative_image: negative})
+            sum_avg_dist_AP += sess.run(batch_avg_dist_AP, feed_dict={anchor_image : anchor, positive_image: positive})
+            sum_avg_dist_AN += sess.run(batch_avg_dist_AN, feed_dict={anchor_image : anchor, negative_image: negative})
             
             
-        avg_dist_AP = avg_dist_AP
-        avg_dist_AN = avg_dist_AN
+        avg_dist_AP = sum_avg_dist_AP / len(image_loader)
+        avg_dist_AN = sum_avg_dist_AN / len(image_loader)
 
         print('Average distance A-P: %e' % avg_dist_AP)
         print('Average distance A-N: %e' % avg_dist_AN)

@@ -57,22 +57,22 @@ def preprocess_data(source, info_file, num_anchors, test_dev_ratio):
 
         length_dict = sum([len(value) for key, value in artist_dict.items()])
 
-        num_artists = int(math.ceil(length_dict * test_dev_ratio))
-        dev_dict, temp_dict = pick_n_from_dict(artist_dict, num_artists)
-        test_dict, train_dict = pick_n_from_dict(temp_dict, num_artists)
+        num_paintings = int(math.ceil(length_dict * test_dev_ratio))
+        dev_dict, temp_dict = pick_n_from_dict(artist_dict, num_paintings)
+        test_dict, train_dict = pick_n_from_dict(temp_dict, num_paintings)
 
         touple_array, answer = util.generate_touple(dev_dict, 2)
-        _preprocesse_images(source, touple_array, DEV_DIR, 2)
+        _preprocess_images(source, touple_array, DEV_DIR, 2)
         _write("dev_answer", str(answer))
         print("dev_data complete!")
 
         touple_array, answer = util.generate_touple(test_dict, 2)
-        _preprocesse_images(source, touple_array, TEST_DIR, 2)
+        _preprocess_images(source, touple_array, TEST_DIR, 2)
         _write("test_answer", str(answer))
         print("test_data complete!")
 
     triplets_array = util.generate_triplets(train_dict, num_anchors)
-    _preprocesse_images(source, triplets_array, TRAIN_DIR, 3)
+    _preprocess_images(source, triplets_array, TRAIN_DIR, 3)
     print("train_data complete!")
 
 
@@ -95,6 +95,8 @@ def pick_n_from_dict(dictionary, num):
         random_value = random.choice(dictionary[random_key])
 
         dictionary[random_key].remove(random_value)
+        if len(dictionary[random_key]) == 0:
+            del dictionary[random_key]
 
         if random_key in sub_dict:
             sub_dict[random_key].append(random_value)
@@ -122,7 +124,7 @@ def _create_directory(directory):
     print("Create folder: " + dir_path + "/" + directory)
 
 
-def _preprocesse_images(source, image_array, save_path, num_images):
+def _preprocess_images(source, image_array, save_path, num_images):
 
     """
     Iterated through image_array and copies touples/triplets into: save_path
