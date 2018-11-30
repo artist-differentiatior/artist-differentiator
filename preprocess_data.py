@@ -49,16 +49,16 @@ def preprocess_data(source, info_file, num_anchors, test_dev_ratio):
 
     _create_directory(TRAIN_DIR)
 
-    artist_dict = util.parse_info_file(info_file, source)
+    train_dict = util.parse_info_file(info_file, source)
 
     if test_dev_ratio != 0:
         _create_directory(DEV_DIR)
         _create_directory(TEST_DIR)
 
-        length_dict = sum([len(value) for key, value in artist_dict.items()])
+        length_dict = sum([len(value) for key, value in train_dict.items()])
 
         num_paintings = int(math.ceil(length_dict * test_dev_ratio))
-        dev_dict, temp_dict = pick_n_from_dict(artist_dict, num_paintings)
+        dev_dict, temp_dict = pick_n_from_dict(train_dict, num_paintings)
         test_dict, train_dict = pick_n_from_dict(temp_dict, num_paintings)
 
         touple_array, answer = util.generate_touple(dev_dict, 2)

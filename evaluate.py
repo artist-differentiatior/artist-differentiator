@@ -114,7 +114,7 @@ def evaluate(test_path, weight_path, style_layers_indices, type):
                 else:
                     prediction.append(0)
 
-                #print(dist1)
+                print(dist1)
 
                 dist2 = sess.run(compute_dist, feed_dict={image_1 : img1, image_2: img3})
                 
@@ -123,7 +123,7 @@ def evaluate(test_path, weight_path, style_layers_indices, type):
                 else:
                     prediction.append(0)
 
-                #print(dist2)
+                print(dist2)
 
         else:
 
@@ -148,7 +148,7 @@ def evaluate(test_path, weight_path, style_layers_indices, type):
                 else:
                     prediction.append(0)
 
-                #print(dist)
+                print(dist)
 
 
         f1_accuracy = f1_score(answer, prediction)
