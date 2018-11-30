@@ -23,7 +23,7 @@ from load_images import *
 #STYLE_LAYERS = ('relu1_1', 'relu2_1')
 #STYLE_LAYERS = ('relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1')
 #STYLE_LAYERS = ( 'relu4_1', 'relu5_1')
-STYLE_LAYERS = ['relu4_1']
+STYLE_LAYERS = ['relu4_1', 'relu5_1']
 
 CSV_FILE_PATH = 'new_train_info.csv'
 PCA_PATH = 'pca_images/'

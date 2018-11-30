@@ -58,8 +58,8 @@ def preprocess_data(source, info_file, num_anchors, test_dev_ratio):
         length_dict = sum([len(value) for key, value in train_dict.items()])
 
         num_paintings = int(math.ceil(length_dict * test_dev_ratio))
-        dev_dict, temp_dict = pick_n_from_dict(train_dict, num_paintings)
-        test_dict, train_dict = pick_n_from_dict(temp_dict, num_paintings)
+        dev_dict, train_dict = pick_n_from_dict(train_dict, num_paintings)
+        test_dict, train_dict = pick_n_from_dict(train_dict, num_paintings)
 
         touple_array, answer = util.generate_touple(dev_dict, 2)
         _preprocess_images(source, touple_array, DEV_DIR, 2)
@@ -139,13 +139,16 @@ def _preprocess_images(source, image_array, save_path, num_images):
 
     random_indices = range(len(image_array))
     random.shuffle(random_indices)
-    
+
+    total_nr_images = len(image_array)    
+
     counter = 1
 
     for index in tqdm(random_indices):
-
+	
+	num = '0'*(len(str(total_nr_images)) - len(str(counter))) + str(counter)
         images = image_array[index]
-        _create_preprocessed_triplet(source, counter, images, save_path, num_images)
+        _create_preprocessed_triplet(source, num, images, save_path, num_images)
         counter += 1
 
 
@@ -155,7 +158,7 @@ def _create_preprocessed_triplet(source, num, images, save_path, num_images):
 
     Args: 
         source: (str) path to source directory
-        num: (int) triplet/touple number
+        num: (str) triplet/touple number
         images: (array) determine which files in source directory to use as triplet
         save_path: (str) path to directory to save images in
         num_images: (int) number of images in images to copy

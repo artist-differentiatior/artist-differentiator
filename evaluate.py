@@ -100,12 +100,12 @@ def evaluate(test_path, weight_path, style_layers_indices, type):
         if type == 'train':
 
             answer = [1, 0] * len(image_loader)
-
+	    
             for img1, img2, img3 in tqdm(image_loader):
 
                 img1 = trained_vgg.preprocess(img1, vgg_mean_pixel)
                 img2 = trained_vgg.preprocess(img2, vgg_mean_pixel)
-                img3 = trained_vgg.preprocess(img2, vgg_mean_pixel)
+                img3 = trained_vgg.preprocess(img3, vgg_mean_pixel)
 
                 dist1 = sess.run(compute_dist, feed_dict={image_1 : img1, image_2: img2})
 
@@ -125,8 +125,8 @@ def evaluate(test_path, weight_path, style_layers_indices, type):
 
                 print(dist2)
 
-        else:
 
+        else:
             if type == 'dev':
                 with open('dev_answer.txt', 'r') as dev_answer_file:
                     answer = ast.literal_eval(dev_answer_file.readline())
