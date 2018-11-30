@@ -7,6 +7,7 @@ from argparse import ArgumentParser
 
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
+from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 
 from tqdm import tqdm # progressbar
@@ -115,7 +116,8 @@ def apply_pca(weight_path, preprocessed_path, csv_file_path, pca_path, original_
 
 
     # Apply PCA
-    pca = PCA(n_components=2)
+    pca = PCA(n_components=50)
+    tsne = TSNE(n_components=2)
 
     n_colors = len(gram_data.keys())
     cmap = plt.get_cmap('gnuplot')
@@ -125,9 +127,9 @@ def apply_pca(weight_path, preprocessed_path, csv_file_path, pca_path, original_
 
     i = 1
     print('Computing PCA...')
-    for artist, gram in gram_data.iteritems():
+    for artist, gram in tqdm(gram_data.iteritems()):
         standard_gram = StandardScaler().fit_transform(gram)
-        pca_out = np.array(pca.fit_transform(standard_gram))
+        pca_out = np.array(tsne.fit_transform(pca.fit_transform(standard_gram)))
         pca_out = pca_out.T # Transpose to get shape (2, n_points) 
     
         plt.scatter(pca_out[0], pca_out[1], c=colors[i-1], label='Artist ' + str(i))
