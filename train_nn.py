@@ -84,6 +84,17 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_na
     datetime_log = str(datetime.datetime.now().strftime("%Y-%m-%d-%H:%M:%S"))
 
     logging.basicConfig(filename='Log/' + datetime_log + '.log',level=logging.INFO)
+    logging.info(" ------------ Options ------------")
+    logging.info("Network: %s" % network)
+    logging.info("Epochs: %d" % epochs)
+    logging.info("Learning rate: %e" % learning_rate)
+    logging.info("Mini batch size: %d" % batch_size)
+    logging.info("Weight destination: %s" % save_file_name)
+    logging.info("Loss threshold: %e" % loss_threshold)
+    logging.info("Style layers: %s" % style_layers_indices)
+    logging.info("Using checkpoints: %s" % checkpoints)
+    logging.info("Device: %s" % device_name)
+    logging.info("------------------------------------------")
     logging.info('Started training: ' + datetime_log)
 
     if not os.path.exists("checkpoints"):

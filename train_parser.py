@@ -87,6 +87,19 @@ def main():
     else:
         parser.error('Invalid device. Choose cpu or gpu')
         exit()
+
+    print(" ------------ Current Options ------------")
+    print("Network: %s" % options.network)
+    print("Epochs: %d" % options.epochs)
+    print("Learning rate: %e" % options.learning_rate)
+    print("Mini batch size: %d" % options.mini_batch_size)
+    print("Weight destination: %s" % options.name)
+    print("Loss threshold: %e" % options.loss_threshold)
+    print("Style layers: %s" % options.style_layers_indices)
+    print("Using checkpoints: %s" % options.checkpoints)
+    print("Device: %s" % options.device)
+    print("------------------------------------------")
+    print("")
     
     train_nn(
         network=options.network,
