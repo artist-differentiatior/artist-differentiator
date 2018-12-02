@@ -12,7 +12,7 @@ from argparse import ArgumentParser
 from tqdm import tqdm
 from PIL import Image
 
-from sklearn.metrics import f1_score
+from sklearn.metrics import f1_score, roc_auc_score
 
 NAME_STYLE_LAYERS = ['relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1']
 VGG_PATH = 'vgg_net_original.mat'
@@ -152,6 +152,7 @@ def evaluate(test_path, weight_path, style_layers_indices, type):
 
 
         f1_accuracy = f1_score(answer, prediction)
+        auc_score = roc_auc_score(answer, prediction)
 
         
         print('Average distance AP: %e' % avg_dist_AP)
@@ -160,6 +161,7 @@ def evaluate(test_path, weight_path, style_layers_indices, type):
         print('Answer    : ' + str(answer))
         print('Prediction: ' + str(prediction))
         print('F1 Score: %f' % f1_accuracy)
+        print('AUC Score: %f' % auc_score)
 
     
             
