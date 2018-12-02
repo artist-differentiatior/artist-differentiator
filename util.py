@@ -166,6 +166,7 @@ def generate_touple(artist_dict, num):
                 
 
 
+    # Shuffle the arrays so we do not to get [1,0,1,0,1,0 ... ]
     list_to_shuffle = list(zip(touple_array, answer))
     random.shuffle(list_to_shuffle)
     touple_array, answer = zip(*list_to_shuffle)
