@@ -100,33 +100,75 @@ def generate_touple(artist_dict, num):
         num: (int) number of times to iterate over same painting to create a touple
     '''
 
-    image_array = []
-
-    for artist, paintings_by_artist in artist_dict.iteritems():
-
-        for painting in paintings_by_artist:
-
-            image_array.append([painting, artist])
+    artist_keys = artist_dict.keys()
+    nr_paintings = 0
+    for artist in artist_keys:
+        nr_paintings += len(artist_dict[artist])
 
     touple_array = []
     answer = []
 
-    for index in range(len(image_array)):
+    for artist in artist_keys:
+        for painting in artist_dict[artist]:
+            for count in range(num):
+                    
+                
+                if sum(answer) > 0.5*len(answer): # If more positives - pick a random negative
 
-        for count in range(num):
+                    artist1 = artist
+                    painting1 = painting
+                
+                    artist2 = artist1
+                    while artist2 == artist1:
+                        artist2 = artist_keys[random.randint(0, len(artist_keys)-1)] # random different artist
 
-            random_index = random.randint(0,len(image_array) - 1)
-            while random_index == index:
-                random_index = random.randint(0,len(image_array) - 1)
+                    painting2 = artist_dict[artist2][random.randint(0, len(artist_dict[artist2])-1)] # random painting by that artist
 
-            painting1 = image_array[index][0]
-            artist1 = image_array[index][1]
+                    while ([painting1, painting2] in touple_array) or ([painting2, painting1] in touple_array): # if we already have that touple - try again
+                        
+                        artist2 = artist1
+                        while artist2 == artist1:
+                            artist2 = artist_keys[random.randint(0, len(artist_keys)-1)] # random different artist
 
-            painting2 = image_array[random_index][0]
-            artist2 = image_array[random_index][1]
-            
-            touple_array.append([painting1, painting2])
-            answer.append(1 if artist1 == artist2 else 0)
+                        painting2 = artist_dict[artist2][random.randint(0, len(artist_dict[artist2])-1)] # random painting by that artist
 
+                    touple_array.append([painting1, painting2])
+                    answer.append(1 if artist1 == artist2 else 0)
+
+                elif sum(answer) <= 0.5*len(answer): # If more negatives - pick a random positive
+
+                    artist1 = artist
+                    painting1 = painting
+
+                    artist2 = artist1 # same artist
+
+                    painting2 = painting1
+                    while painting2 == painting1:
+                        painting2 = artist_dict[artist2][random.randint(0, len(artist_dict[artist2])-1)] # different painting
+                                                         
+                    tries = 0
+                    while ([painting1, painting2] in touple_array) or ([painting2, painting1] in touple_array): # if we already have that touple - try again
+
+                        if tries == 100: # If tried a 100 times - give up
+                            break
+                                                         
+                        painting2 = painting1
+                        while painting2 == painting1:
+                            painting2 = artist_dict[artist2][random.randint(0, len(artist_dict[artist2])-1)] # different painting
+
+                        tries += 1
+                                                             
+                    if tries == 100: # if failed - don't make more touples for this painting
+                        break
+
+                    touple_array.append([painting1, painting2])
+                    answer.append(1 if artist1 == artist2 else 0)
+                
+
+
+    list_to_shuffle = list(zip(touple_array, answer))
+    random.shuffle(list_to_shuffle)
+    touple_array, answer = zip(*list_to_shuffle)
+    
     return touple_array, answer
             
