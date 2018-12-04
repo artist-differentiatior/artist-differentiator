@@ -23,7 +23,7 @@ from load_images import *
 #STYLE_LAYERS = ('relu1_1', 'relu2_1')
 #STYLE_LAYERS = ('relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1')
 #STYLE_LAYERS = ( 'relu4_1', 'relu5_1')
-STYLE_LAYERS = ['relu4_1']
+STYLE_LAYERS = ['relu4_1', 'relu5_1']
 
 CSV_FILE_PATH = 'new_train_info.csv'
 PCA_PATH = 'pca_images/'
@@ -76,6 +76,8 @@ def apply_pca(weight_path, preprocessed_path, csv_file_path, pca_path, original_
     # List of the computed PCA's for artist 1 and artist 2
     gram_data = {}
 
+    all_grams = []
+
     # Initialize image loader
     image_loader = Image_Loader(pca_path, 1, load_size=1)
 
@@ -110,6 +112,8 @@ def apply_pca(weight_path, preprocessed_path, csv_file_path, pca_path, original_
                 gram_data[current_artist] = [gram_all_layers]
             else:
                 gram_data[current_artist].append(gram_all_layers)
+
+            all_grams = np.concatenate(all_grams, gram_all_layers, axis=0)
                 
 
             img_nr += 1
@@ -117,11 +121,14 @@ def apply_pca(weight_path, preprocessed_path, csv_file_path, pca_path, original_
 
     # Apply PCA
     pca = PCA(n_components=50)
-    tsne = TSNE(n_components=2)    
+    tsne = TSNE(n_components=2)
+
+    pca.fit(all_grams)
 
     n_colors = len(gram_data.keys())
     cmap = plt.get_cmap('gnuplot')
     colors = [cmap(i) for i in np.linspace(0, 1, n_colors)]
+
     
     plt.figure(1)
 
@@ -129,7 +136,7 @@ def apply_pca(weight_path, preprocessed_path, csv_file_path, pca_path, original_
     print('Computing PCA...')
     for artist, gram in tqdm(gram_data.iteritems()):
         standard_gram = StandardScaler().fit_transform(gram)
-        pca_out = np.array(tsne.fit_transform(pca.fit_transform(standard_gram)))
+        pca_out = np.array(pca.transform(standard_gram))
         pca_out = pca_out.T # Transpose to get shape (2, n_points) 
     
         plt.scatter(pca_out[0], pca_out[1], c=colors[i-1], label='Artist ' + str(i))
