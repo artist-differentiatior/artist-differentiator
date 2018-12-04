@@ -113,29 +113,33 @@ def apply_pca(weight_path, preprocessed_path, csv_file_path, pca_path, original_
             else:
                 gram_data[current_artist].append(gram_all_layers)
 
-            all_grams = np.concatenate(all_grams, gram_all_layers, axis=0)
+            all_grams.append(gram_all_layers)
                 
 
             img_nr += 1
 
 
     # Apply PCA
+    scaler = StandardScaler()
     pca = PCA(n_components=50)
     tsne = TSNE(n_components=2)
 
-    pca.fit(all_grams)
+    scaler.fit(all_grams)
+    standard_all_grams = scaler.transform(all_grams)
+    pca.fit(standard_all_grams)
+
+
 
     n_colors = len(gram_data.keys())
     cmap = plt.get_cmap('gnuplot')
     colors = [cmap(i) for i in np.linspace(0, 1, n_colors)]
 
-    
     plt.figure(1)
 
     i = 1
     print('Computing PCA...')
     for artist, gram in tqdm(gram_data.iteritems()):
-        standard_gram = StandardScaler().fit_transform(gram)
+        standard_gram = scaler.transform(gram)
         pca_out = np.array(pca.transform(standard_gram))
         pca_out = pca_out.T # Transpose to get shape (2, n_points) 
     
@@ -144,7 +148,6 @@ def apply_pca(weight_path, preprocessed_path, csv_file_path, pca_path, original_
         i += 1
     plt.legend()
 
-    #plt.show()
     plt.savefig('test.pdf')
 
     
