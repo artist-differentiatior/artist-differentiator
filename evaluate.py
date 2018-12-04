@@ -124,6 +124,7 @@ def evaluate(test_path, weight_path, style_layers_indices, type):
                     prediction.append(0)
 
                 print(dist2)
+		
 
 
         else:

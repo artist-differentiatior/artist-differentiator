@@ -23,7 +23,7 @@ from load_images import *
 #STYLE_LAYERS = ('relu1_1', 'relu2_1')
 #STYLE_LAYERS = ('relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1')
 #STYLE_LAYERS = ( 'relu4_1', 'relu5_1')
-STYLE_LAYERS = ['relu4_1', 'relu5_1']
+STYLE_LAYERS = ['relu4_1']
 
 CSV_FILE_PATH = 'new_train_info.csv'
 PCA_PATH = 'pca_images/'
@@ -117,7 +117,7 @@ def apply_pca(weight_path, preprocessed_path, csv_file_path, pca_path, original_
 
     # Apply PCA
     pca = PCA(n_components=50)
-    tsne = TSNE(n_components=2)
+    tsne = TSNE(n_components=2)    
 
     n_colors = len(gram_data.keys())
     cmap = plt.get_cmap('gnuplot')
