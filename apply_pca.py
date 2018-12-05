@@ -123,8 +123,7 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
                 for layer in style_layers:
                     gram = sess.run(image_styles[layer], feed_dict={image: img}) # Compute gram matrices
                     gram = gram.reshape(gram.shape[0]*gram.shape[1]*gram.shape[2]) # Flatten gram matrices
-                
-                gram_all_layers = np.concatenate((gram_all_layers, gram), axis=0) # Concatanate with gram matrices of other layers
+                    gram_all_layers = np.concatenate((gram_all_layers, gram), axis=0) # Concatanate with gram matrices of other layers
 
                 if artist not in gram_dict: # Add the gram data to the corresponding artists entry in dictionary
                     gram_dict[artist] = [gram_all_layers]
@@ -160,8 +159,7 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
                 for layer in style_layers:
                     gram = sess.run(image_styles[layer], feed_dict={image: img}) # Compute gram matrices
                     gram = gram.reshape(gram.shape[0]*gram.shape[1]*gram.shape[2]) # Flatten gram matrices
-                
-                gram_all_layers = np.concatenate((gram_all_layers, gram), axis=0) # Concatanate with gram matrices of other layers
+                    gram_all_layers = np.concatenate((gram_all_layers, gram), axis=0) # Concatanate with gram matrices of other layers
 
                 if artist not in gram_dict: # Add the gram data to the corresponding artists entry in dictionary
                     gram_dict[artist] = [gram_all_layers]
