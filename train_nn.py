@@ -1,5 +1,6 @@
 import os
 import time
+import csv
 import datetime
 from collections import OrderedDict
 from tqdm import tqdm
@@ -167,34 +168,61 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_na
 
         print('Training completed. Computing mean distances...')
 
-        sum_avg_dist_AP = 0
-        sum_avg_dist_AN = 0
-        for anchor, positive, negative in tqdm(image_loader):
+        # Get file names
+        image_file_names = os.listdir(PREPROCESSED_PATH)
+        image_file_names.sort()
+        
+        #sum_avg_dist_AP = 0
+        #sum_avg_dist_AN = 0
+        count = 0
+        gram_matrix_dict = {}
+        artist_dict = _parse_info_file('train_info.csv', PREPROCESSED_PATH)
+        artist_list = _convert_dict_to_list(artist_dict)
 
+        single_image_loader = Image_Loader(PREPROCESSED_PATH, 1)
+    
+        for anchor, positive, negative in tqdm(single_image_loader):
+
+            anchor_file_name = image_file_names[count]
+            painting_name = anchor_file_name.split('-')[1]
+
+            index = np.where(artist_list[:,1] == painting_name)
+            artist = np.asscalar(artist_list[index,0])
+            
             anchor = trained_vgg.preprocess(anchor, vgg_mean_pixel)
-            positive = trained_vgg.preprocess(positive, vgg_mean_pixel)
-            negative = trained_vgg.preprocess(negative, vgg_mean_pixel)
+            #positive = trained_vgg.preprocess(positive, vgg_mean_pixel)
+            #negative = trained_vgg.preprocess(negative, vgg_mean_pixel)
 
-            sum_avg_dist_AP += sess.run(batch_avg_dist_AP, feed_dict={anchor_image : anchor, positive_image: positive})
-            sum_avg_dist_AN += sess.run(batch_avg_dist_AN, feed_dict={anchor_image : anchor, negative_image: negative})
+            gram_matrix = sess.run(anchor_styles['relu5_1'], feed_dict={anchor_image: anchor})
+
+            if artist in gram_matrix_dict.keys():
+                gram_matrix_dict[artist] = np.array((gram_matrix_dict[artist] + gram_matrix)/2).astype(np.float)
+            else:
+                gram_matrix_dict[artist] = np.array(gram_matrix).astype(np.float)
+            
+            count += 3
+            
+            #sum_avg_dist_AP += sess.run(batch_avg_dist_AP, feed_dict={anchor_image : anchor, positive_image: positive})
+            #sum_avg_dist_AN += sess.run(batch_avg_dist_AN, feed_dict={anchor_image : anchor, negative_image: negative})
             
             
-        avg_dist_AP = sum_avg_dist_AP / len(image_loader)
-        avg_dist_AN = sum_avg_dist_AN / len(image_loader)
+        #avg_dist_AP = sum_avg_dist_AP / len(image_loader)
+        #avg_dist_AN = sum_avg_dist_AN / len(image_loader)
 
-        print('Average distance A-P: %e' % avg_dist_AP)
-        print('Average distance A-N: %e' % avg_dist_AN)
+        #print('Average distance A-P: %e' % avg_dist_AP)
+        #print('Average distance A-N: %e' % avg_dist_AN)
 
         # Collect extra parameters to save in .mat-file
         extra_parameters = {}
-        extra_parameters['avg_dist_AP'] = avg_dist_AP
-        extra_parameters['avg_dist_AN'] = avg_dist_AN
-        extra_parameters['mean_pixel'] = vgg_mean_pixel
+        #extra_parameters['avg_dist_AP'] = avg_dist_AP
+        #extra_parameters['avg_dist_AN'] = avg_dist_AN
         
+        extra_parameters['mean_pixel'] = vgg_mean_pixel
+        extra_parameters.update(gram_matrix_dict)
 
         print('Saving parameters...')
         file_name = trained_vgg.save_parameters(sess, extra_parameters, save_file_name)
-        print('Parameters saved in: ' + file_name + '.m')
+        print('Parameters saved in: ' + file_name + '.mat')
         
             
 def _generate_style(net, style_layers):
@@ -207,6 +235,62 @@ def _generate_style(net, style_layers):
         styles[layer] = gram
 
     return styles
+
+def _convert_dict_to_list(artist_dict):
+
+    new_list = []
+    for artist, paintings in artist_dict.iteritems():
+        for painting in paintings:
+            new_list.append([artist, painting])
+
+    return np.array(new_list)
+
+def _parse_info_file(csv_file_path, paintings_file_path):
+
+    '''
+    Parses info file. Creates dictionary with keyword as artists and the corresponding value as an 
+    array of paintings.
+
+    Args:
+        csv_file_path: (str) path to csv file containing info about dataset
+        paintings_file_path: (str) path to directory containing dataset
+    '''
+    file_names = []
+    
+    file_names = os.listdir(paintings_file_path)
+    for i in range(len(file_names)):
+        file_names[i] = file_names[i].split('-')[1]
+
+    
+
+    with open(csv_file_path, "r") as info_file:
+
+        info_reader = csv.reader(info_file, dialect="excel", delimiter=",", quotechar="\"")
+
+        artist_dict = {} # key=artist, value=[[file_name, style], ...]
+        info = info_reader.next()
+        
+        artist_index = info.index("artist")
+        filename_index = info.index("filename")
+
+        for row in info_reader:
+            
+            artist_name = row[artist_index]
+            file_name = row[filename_index]
+
+            if file_name not in file_names:
+                continue
+            
+            
+            artist_dict_info = file_name
+            
+            if artist_name not in artist_dict:
+                artist_dict[artist_name] = [artist_dict_info]
+            else:
+                artist_dict[artist_name].append(artist_dict_info)
+
+        
+    return artist_dict
 
 def hms(seconds):
     seconds = int(seconds)

@@ -22,6 +22,9 @@ def load_net(data_path):
     Loads parameters from data_path (path to .mat file)
     """
     parameter_dict = scipy.io.loadmat(data_path)
+    del parameter_dict['__version__']
+    del parameter_dict['__globals__']
+    del parameter_dict['__header__']
     
     return parameter_dict
 

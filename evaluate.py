@@ -37,7 +37,7 @@ def build_parser():
     return parser
 
 
-def evaluate(test_path, weight_path, style_layers_indices, type):
+def evaluate(test_path, weight_path, style_layers_indices, data_type):
 
     """
     Trains the neural net using triplet loss
@@ -59,7 +59,6 @@ def evaluate(test_path, weight_path, style_layers_indices, type):
         parser.error("Network %s does not exist. (Did you forget to download it?)" % VGG_PATH)
 
     parameter_dict = trained_vgg.load_net(weight_path)
-    vgg_mean_pixel = parameter_dict['mean_pixel']
 
     image_1 = tf.placeholder('float', shape=(None, 224,224,3))
     image_2 = tf.placeholder('float', shape=(None, 224,224,3))
@@ -75,16 +74,23 @@ def evaluate(test_path, weight_path, style_layers_indices, type):
 
     
     # Initialize image loader
-    if type != 'train':
+    if data_type != 'train':
         image_loader = Image_Loader(test_path, 1, load_size=2)
     else:
         image_loader = Image_Loader(test_path, 1, load_size=3)
 
-    avg_dist_AP = parameter_dict['avg_dist_AP']
-    avg_dist_AN = parameter_dict['avg_dist_AN']
+    #avg_dist_AP = parameter_dict['avg_dist_AP']
+    #avg_dist_AN = parameter_dict['avg_dist_AN']
 
     #harmonic_mean_threshold = 2*avg_dist_AP*avg_dist_AN/(avg_dist_AP + avg_dist_AN)
-    harmonic_mean_threshold = (avg_dist_AP+avg_dist_AN)/2
+    #harmonic_mean_threshold = (avg_dist_AP+avg_dist_AN)/2
+
+    vgg_mean_pixel = parameter_dict['mean_pixel']
+    del parameter_dict['mean_pixel']
+    
+    gram_matrix_dict = parameter_dict
+
+    print(gram_matrix_dict.keys())
 
 
     prediction = []
@@ -97,7 +103,7 @@ def evaluate(test_path, weight_path, style_layers_indices, type):
 
         sess.run(tf.global_variables_initializer())
 
-        if type == 'train':
+        if data_type == 'train':
 
             answer = [1, 0] * len(image_loader)
 	    
@@ -107,31 +113,49 @@ def evaluate(test_path, weight_path, style_layers_indices, type):
                 img2 = trained_vgg.preprocess(img2, vgg_mean_pixel)
                 img3 = trained_vgg.preprocess(img3, vgg_mean_pixel)
 
-                dist1 = sess.run(compute_dist, feed_dict={image_1 : img1, image_2: img2})
+                img1_gram = sess.run(image_1_styles['relu5_1'], feed_dict={image_1:img1})
+                img2_gram = sess.run(image_1_styles['relu5_1'], feed_dict={image_1:img2})
+                img3_gram = sess.run(image_1_styles['relu5_1'], feed_dict={image_1:img3})
 
-                if dist1 <= harmonic_mean_threshold:
+                closest_artist_1 = _find_closest_artist(gram_matrix_dict, img1_gram)
+                closest_artist_2 = _find_closest_artist(gram_matrix_dict, img2_gram)
+                closest_artist_3 = _find_closest_artist(gram_matrix_dict, img3_gram)
+
+                if closest_artist_1 == closest_artist_2:
                     prediction.append(1)
                 else:
                     prediction.append(0)
 
-                print(dist1)
-
-                dist2 = sess.run(compute_dist, feed_dict={image_1 : img1, image_2: img3})
+                if closest_artist_1 == closest_artist_3:
+                    prediction.append(1)
+                else:
+                    prediction.append(0)
                 
-                if dist2 <= harmonic_mean_threshold:
-                    prediction.append(1)
-                else:
-                    prediction.append(0)
+                #dist1 = sess.run(compute_dist, feed_dict={image_1 : img1, image_2: img2})
 
-                print(dist2)
+                #if dist1 <= harmonic_mean_threshold:
+                #    prediction.append(1)
+                #else:
+                #    prediction.append(0)
+
+                #print(dist1)
+
+                #dist2 = sess.run(compute_dist, feed_dict={image_1 : img1, image_2: img3})
+                
+                #if dist2 <= harmonic_mean_threshold:
+                #    prediction.append(1)
+                #else:
+                #    prediction.append(0)
+
+                #print(dist2)
 		
 
 
         else:
-            if type == 'dev':
+            if data_type == 'dev':
                 with open('dev_answer.txt', 'r') as dev_answer_file:
                     answer = ast.literal_eval(dev_answer_file.readline())
-            elif type == 'test':
+            elif data_type == 'test':
                 with open('test_answer.txt', 'r') as test_answer_file:
                     answer = ast.literal_eval(test_answer_file.readline())
                 
@@ -142,23 +166,23 @@ def evaluate(test_path, weight_path, style_layers_indices, type):
                 img1 = trained_vgg.preprocess(img1, vgg_mean_pixel)
                 img2 = trained_vgg.preprocess(img2, vgg_mean_pixel)
 
-                dist = sess.run(compute_dist, feed_dict={image_1 : img1, image_2: img2})
+                #dist = sess.run(compute_dist, feed_dict={image_1 : img1, image_2: img2})
                 
-                if dist <= harmonic_mean_threshold:
-                    prediction.append(1)
-                else:
-                    prediction.append(0)
+                #if dist <= harmonic_mean_threshold:
+                #    prediction.append(1)
+                #else:
+                #    prediction.append(0)
 
-                print(dist)
+                #print(dist)
 
 
         f1_accuracy = f1_score(answer, prediction)
         auc_score = roc_auc_score(answer, prediction)
 
         
-        print('Average distance AP: %e' % avg_dist_AP)
-        print('Average distance AN: %e'% avg_dist_AN)
-        print('Harmonic mean: %e' % harmonic_mean_threshold)        
+        #print('Average distance AP: %e' % avg_dist_AP)
+        #print('Average distance AN: %e'% avg_dist_AN)
+        #print('Harmonic mean: %e' % harmonic_mean_threshold)        
         print('Answer    : ' + str(answer))
         print('Prediction: ' + str(prediction))
         print('F1 Score: %f' % f1_accuracy)
@@ -177,6 +201,20 @@ def _generate_style(net, style_layers):
 
     return styles
 
+def _find_closest_artist(gram_matrix_dict, gram):
+
+    min = 1e12
+    for artist, average_gram in gram_matrix_dict.iteritems():
+        if artist[0] == 'b' or artist[0] == 'w':
+            continue
+
+        norm_dist = np.linalg.norm(gram - average_gram.astype(np.float))
+        if norm_dist < min:
+            min = norm_dist
+            closest_artist = artist
+    
+    return closest_artist
+
 def main():
     parser = build_parser()
     options = parser.parse_args()
@@ -187,7 +225,7 @@ def main():
     evaluate(test_path=options.test_path,
              weight_path=options.weight_path,
              style_layers_indices=options.style_layers_indices,
-             type=options.type)
+             data_type=options.type)
 
 
 if __name__ == "__main__":
