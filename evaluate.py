@@ -90,8 +90,6 @@ def evaluate(test_path, weight_path, style_layers_indices, data_type):
     
     gram_matrix_dict = parameter_dict
 
-    print(gram_matrix_dict.keys())
-
 
     prediction = []
 
@@ -165,6 +163,17 @@ def evaluate(test_path, weight_path, style_layers_indices, data_type):
 
                 img1 = trained_vgg.preprocess(img1, vgg_mean_pixel)
                 img2 = trained_vgg.preprocess(img2, vgg_mean_pixel)
+
+                img1_gram = sess.run(image_1_styles['relu5_1'], feed_dict={image_1:img1})
+                img2_gram = sess.run(image_1_styles['relu5_1'], feed_dict={image_1:img2})
+
+                closest_artist_1 = _find_closest_artist(gram_matrix_dict, img1_gram)
+                closest_artist_2 = _find_closest_artist(gram_matrix_dict, img2_gram)
+
+                if closest_artist_1 == closest_artist_2:
+                    prediction.append(1)
+                else:
+                    prediction.append(0)
 
                 #dist = sess.run(compute_dist, feed_dict={image_1 : img1, image_2: img2})
                 

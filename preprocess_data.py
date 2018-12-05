@@ -61,12 +61,12 @@ def preprocess_data(source, info_file, num_anchors, test_dev_ratio):
         dev_dict, train_dict = pick_n_from_dict(train_dict, num_paintings)
         test_dict, train_dict = pick_n_from_dict(train_dict, num_paintings)
 
-        touple_array, answer = util.generate_touple(dev_dict, 2)
+        touple_array, answer = util.generate_touple(dev_dict)
         _preprocess_images(source, touple_array, DEV_DIR, 2)
         _write("dev_answer", str(answer))
         print("dev_data complete!")
 
-        touple_array, answer = util.generate_touple(test_dict, 2)
+        touple_array, answer = util.generate_touple(test_dict)
         _preprocess_images(source, touple_array, TEST_DIR, 2)
         _write("test_answer", str(answer))
         print("test_data complete!")

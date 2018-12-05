@@ -199,7 +199,7 @@ def generate_touple(artist_dict):
 
         rand_artist = random.choice(artist_dict.keys())
 
-        if num_same <= num_diff and len(artist_dict[rand_artist]) > 1:
+        if (num_same <= num_diff or len(artist_dict.keys()) == 1) and len(artist_dict[rand_artist]) > 1:
             
             two_paintings = random.sample(artist_dict[rand_artist], 2)
 
@@ -242,6 +242,10 @@ def generate_touple(artist_dict):
             answer.append(0)
 
             num_diff += 1
+
+    list_to_shuffle = list(zip(touple_array, answer))
+    random.shuffle(list_to_shuffle)
+    touple_array, answer = zip(*list_to_shuffle)
 
     return touple_array, answer
 
