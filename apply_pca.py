@@ -7,7 +7,6 @@ from argparse import ArgumentParser
 
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
-from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 
 from tqdm import tqdm # progressbar
@@ -109,9 +108,11 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
                 img_file_name = image_file_names[count]
                 painting_name = img_file_name.split('-')[1]
 
-		if img_file_name in done_image_names:
+                count += 3
+                
+		if painting_name in done_image_names:
 		    continue
-		done_image_names.append(img_file_name)
+		done_image_names.append(painting_name)
 
                 index = np.where(artist_list[:,1] == painting_name)
                 artist = np.asscalar(artist_list[index,0])
@@ -133,7 +134,7 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
                 all_grams.append(gram_all_layers)
                 
 
-                count += 3
+                
                 
         else: # for test/dev data
 
@@ -144,9 +145,11 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
                 img_file_name = image_file_names[count]
                 painting_name = img_file_name.split('-')[1]
 
-		if img_file_name in done_image_names:
+                count += 2
+
+		if painting_name in done_image_names:
 		    continue
-		done_image_names.append(img_file_name)
+		done_image_names.append(painting_name)
 
                 index = np.where(artist_list[:,1] == painting_name)
                 artist = np.asscalar(artist_list[index,0])
@@ -168,19 +171,14 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
                 all_grams.append(gram_all_layers)
                 
 
-                count += 2
-
     # Compute PCA
     scaler = StandardScaler()
     pca = PCA(n_components=50)
-    tsne = TSNE(n_components=2)
 
     print('Computing PCA...')
     scaler.fit(all_grams)
     standard_all_grams = scaler.transform(all_grams)
     pca.fit(standard_all_grams)
-
-
 
     n_colors = len(gram_dict.keys())
     cmap = plt.get_cmap('gnuplot')
@@ -198,6 +196,7 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
         plt.scatter(pca_out[0], pca_out[1], c=colors[i-1], label='Artist ' + str(i))
 
         i += 1
+        
     plt.legend()
 
     plt.savefig('pca.pdf')
