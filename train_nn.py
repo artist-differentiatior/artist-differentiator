@@ -13,6 +13,7 @@ import tensorflow as tf
 import trained_vgg
 
 from load_images import *
+from util import parse_info_file_triplets, convert_dict_to_list
 import logging
 
 
@@ -169,8 +170,8 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_na
     
         count = 0
         gram_matrix_dict = {}
-        artist_dict = _parse_info_file('train_info.csv', PREPROCESSED_PATH)
-        artist_list = _convert_dict_to_list(artist_dict)
+        artist_dict = parse_info_file_triplets('train_info.csv', PREPROCESSED_PATH)
+        artist_list = convert_dict_to_list(artist_dict)
 
         single_image_loader = Image_Loader(PREPROCESSED_PATH, 1)
 
@@ -217,61 +218,6 @@ def _generate_style(net, style_layers):
 
     return styles
 
-def _convert_dict_to_list(artist_dict):
-
-    new_list = []
-    for artist, paintings in artist_dict.iteritems():
-        for painting in paintings:
-            new_list.append([artist, painting])
-
-    return np.array(new_list)
-
-def _parse_info_file(csv_file_path, paintings_file_path):
-
-    '''
-    Parses info file. Creates dictionary with keyword as artists and the corresponding value as an 
-    array of paintings.
-
-    Args:
-        csv_file_path: (str) path to csv file containing info about dataset
-        paintings_file_path: (str) path to directory containing dataset
-    '''
-    file_names = []
-    
-    file_names = os.listdir(paintings_file_path)
-    for i in range(len(file_names)):
-        file_names[i] = file_names[i].split('-')[1]
-
-    
-
-    with open(csv_file_path, "r") as info_file:
-
-        info_reader = csv.reader(info_file, dialect="excel", delimiter=",", quotechar="\"")
-
-        artist_dict = {} # key=artist, value=[[file_name, style], ...]
-        info = info_reader.next()
-        
-        artist_index = info.index("artist")
-        filename_index = info.index("filename")
-
-        for row in info_reader:
-            
-            artist_name = row[artist_index]
-            file_name = row[filename_index]
-
-            if file_name not in file_names:
-                continue
-            
-            
-            artist_dict_info = file_name
-            
-            if artist_name not in artist_dict:
-                artist_dict[artist_name] = [artist_dict_info]
-            else:
-                artist_dict[artist_name].append(artist_dict_info)
-
-        
-    return artist_dict
 
 def hms(seconds):
     seconds = int(seconds)
