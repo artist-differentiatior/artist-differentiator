@@ -174,7 +174,7 @@ def generate_touple(artist_dict, num):
     return touple_array, answer
     """
 
-def generate_touple(artist_dict):
+def generate_touple(artist_dict, num):
 
     '''
     Generates triplets from a dictonary with artists as keys with painted paintings as value
@@ -182,6 +182,15 @@ def generate_touple(artist_dict):
     Args:
         artist_dict: (dict) Key (string): artist, value (array) corresponding paintings
     '''
+
+    nr_paintings = 0
+    for artist in artist_dict.keys():
+        nr_paintings += len(artist_dict[artist])
+
+    if nr_paintings % 2 == 1:
+        rand_artist = random.choice(artist_dict.keys())
+        rand_painting =  random.sample(artist_dict[rand_artist], 1)[0]
+        artist_dict[rand_artist].remove(rand_painting)
 
     nr_paintings = 0
     for artist in artist_dict.keys():
@@ -195,53 +204,59 @@ def generate_touple(artist_dict):
     num_same = 0
     num_diff = 0
 
-    while artist_dict:
+    original_artist_dict = artist_dict
 
-        rand_artist = random.choice(artist_dict.keys())
+    for count in range(num):
 
-        if (num_same <= num_diff or len(artist_dict.keys()) == 1) and len(artist_dict[rand_artist]) > 1:
+        artist_dict = original_artist_dict
+
+        while artist_dict:
+
+            rand_artist = random.choice(artist_dict.keys())
+
+            if (num_same <= num_diff or len(artist_dict.keys()) == 1) and len(artist_dict[rand_artist]) > 1:
             
-            two_paintings = random.sample(artist_dict[rand_artist], 2)
+                two_paintings = random.sample(artist_dict[rand_artist], 2)
 
-            painting1 = two_paintings[0]
-            painting2 = two_paintings[1]
+                painting1 = two_paintings[0]
+                painting2 = two_paintings[1]
 
-            artist_dict[rand_artist].remove(painting1)
-            artist_dict[rand_artist].remove(painting2)
+                artist_dict[rand_artist].remove(painting1)
+                artist_dict[rand_artist].remove(painting2)
 
-            if len(artist_dict[rand_artist]) == 0:
-                del artist_dict[rand_artist]
+                if len(artist_dict[rand_artist]) == 0:
+                    del artist_dict[rand_artist]
             
-            touple_array.append([painting1, painting2])
-            answer.append(1)
+                touple_array.append([painting1, painting2])
+                answer.append(1)
 
-            num_same += 1
+                num_same += 1
 
-        else:
+            else:
 
-            other_artists = artist_dict.keys()
-            other_artists.remove(rand_artist)
+                other_artists = artist_dict.keys()
+                other_artists.remove(rand_artist)
 
-            second_artist = random.choice(other_artists)
+                second_artist = random.choice(other_artists)
 
-            painting1 = random.sample(artist_dict[rand_artist], 1)[0]
+                painting1 = random.sample(artist_dict[rand_artist], 1)[0]
 
-            artist_dict[rand_artist].remove(painting1)
+                artist_dict[rand_artist].remove(painting1)
 
-            if len(artist_dict[rand_artist]) == 0:
-                del artist_dict[rand_artist]
+                if len(artist_dict[rand_artist]) == 0:
+                    del artist_dict[rand_artist]
 
-            painting2 = random.sample(artist_dict[second_artist], 1)[0]
+                painting2 = random.sample(artist_dict[second_artist], 1)[0]
 
-            artist_dict[second_artist].remove(painting2)
+                artist_dict[second_artist].remove(painting2)
 
-            if len(artist_dict[second_artist]) == 0:
-                del artist_dict[second_artist]
+                if len(artist_dict[second_artist]) == 0:
+                    del artist_dict[second_artist]
 
-            touple_array.append([painting1, painting2])
-            answer.append(0)
+                touple_array.append([painting1, painting2])
+                answer.append(0)
 
-            num_diff += 1
+                num_diff += 1
 
     list_to_shuffle = list(zip(touple_array, answer))
     random.shuffle(list_to_shuffle)
