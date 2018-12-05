@@ -79,11 +79,6 @@ def evaluate(test_path, weight_path, style_layers_indices, data_type):
     else:
         image_loader = Image_Loader(test_path, 1, load_size=3)
 
-    #avg_dist_AP = parameter_dict['avg_dist_AP']
-    #avg_dist_AN = parameter_dict['avg_dist_AN']
-
-    #harmonic_mean_threshold = 2*avg_dist_AP*avg_dist_AN/(avg_dist_AP + avg_dist_AN)
-    #harmonic_mean_threshold = (avg_dist_AP+avg_dist_AN)/2
 
     vgg_mean_pixel = parameter_dict['mean_pixel']
     del parameter_dict['mean_pixel']
@@ -92,8 +87,6 @@ def evaluate(test_path, weight_path, style_layers_indices, data_type):
 
 
     prediction = []
-
-    #saver = tf.train.Saver()
 
     with tf.Session() as sess:
 
@@ -128,27 +121,7 @@ def evaluate(test_path, weight_path, style_layers_indices, data_type):
                     prediction.append(1)
                 else:
                     prediction.append(0)
-                
-                #dist1 = sess.run(compute_dist, feed_dict={image_1 : img1, image_2: img2})
-
-                #if dist1 <= harmonic_mean_threshold:
-                #    prediction.append(1)
-                #else:
-                #    prediction.append(0)
-
-                #print(dist1)
-
-                #dist2 = sess.run(compute_dist, feed_dict={image_1 : img1, image_2: img3})
-                
-                #if dist2 <= harmonic_mean_threshold:
-                #    prediction.append(1)
-                #else:
-                #    prediction.append(0)
-
-                #print(dist2)
 		
-
-
         else:
             if data_type == 'dev':
                 with open('dev_answer.txt', 'r') as dev_answer_file:
@@ -157,7 +130,6 @@ def evaluate(test_path, weight_path, style_layers_indices, data_type):
                 with open('test_answer.txt', 'r') as test_answer_file:
                     answer = ast.literal_eval(test_answer_file.readline())
                 
-            
 
             for img1, img2 in tqdm(image_loader):
 
@@ -175,23 +147,10 @@ def evaluate(test_path, weight_path, style_layers_indices, data_type):
                 else:
                     prediction.append(0)
 
-                #dist = sess.run(compute_dist, feed_dict={image_1 : img1, image_2: img2})
-                
-                #if dist <= harmonic_mean_threshold:
-                #    prediction.append(1)
-                #else:
-                #    prediction.append(0)
-
-                #print(dist)
-
 
         f1_accuracy = f1_score(answer, prediction)
         auc_score = roc_auc_score(answer, prediction)
-
-        
-        #print('Average distance AP: %e' % avg_dist_AP)
-        #print('Average distance AN: %e'% avg_dist_AN)
-        #print('Harmonic mean: %e' % harmonic_mean_threshold)        
+       
         print('Answer    : ' + str(answer))
         print('Prediction: ' + str(prediction))
         print('F1 Score: %f' % f1_accuracy)

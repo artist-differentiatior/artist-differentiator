@@ -65,12 +65,6 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_na
 
  
     loss = tf.reduce_sum(loss_sum) / tf.to_float(tf.shape(loss_sum)[0])
-    
-    # Used to compute threshold for evaluating on pairs of images
-    dist_p = tf.add_n([tf.reduce_sum((anchor_styles[layer] - positive_styles[layer]) ** 2,[1,2]) for layer in style_layers])
-    dist_n = tf.add_n([tf.reduce_sum((anchor_styles[layer] - negative_styles[layer]) ** 2,[1,2]) for layer in style_layers])
-    batch_avg_dist_AP = tf.reduce_sum(dist_p) / batch_size
-    batch_avg_dist_AN = tf.reduce_sum(dist_n) / batch_size
 
     # optimizer setup
     train_step = tf.train.AdamOptimizer(learning_rate, beta1, beta2, epsilon).minimize(loss)
@@ -172,15 +166,15 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_na
         image_file_names = os.listdir(PREPROCESSED_PATH)
         image_file_names.sort()
         
-        #sum_avg_dist_AP = 0
-        #sum_avg_dist_AN = 0
+    
         count = 0
         gram_matrix_dict = {}
         artist_dict = _parse_info_file('train_info.csv', PREPROCESSED_PATH)
         artist_list = _convert_dict_to_list(artist_dict)
 
         single_image_loader = Image_Loader(PREPROCESSED_PATH, 1)
-    
+
+        # Compute average gram matrix for each artist
         for anchor, positive, negative in tqdm(single_image_loader):
 
             anchor_file_name = image_file_names[count]
@@ -190,8 +184,6 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_na
             artist = np.asscalar(artist_list[index,0])
             
             anchor = trained_vgg.preprocess(anchor, vgg_mean_pixel)
-            #positive = trained_vgg.preprocess(positive, vgg_mean_pixel)
-            #negative = trained_vgg.preprocess(negative, vgg_mean_pixel)
 
             gram_matrix = sess.run(anchor_styles['relu5_1'], feed_dict={anchor_image: anchor})
 
@@ -202,21 +194,10 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_na
             
             count += 3
             
-            #sum_avg_dist_AP += sess.run(batch_avg_dist_AP, feed_dict={anchor_image : anchor, positive_image: positive})
-            #sum_avg_dist_AN += sess.run(batch_avg_dist_AN, feed_dict={anchor_image : anchor, negative_image: negative})
             
-            
-        #avg_dist_AP = sum_avg_dist_AP / len(image_loader)
-        #avg_dist_AN = sum_avg_dist_AN / len(image_loader)
-
-        #print('Average distance A-P: %e' % avg_dist_AP)
-        #print('Average distance A-N: %e' % avg_dist_AN)
 
         # Collect extra parameters to save in .mat-file
         extra_parameters = {}
-        #extra_parameters['avg_dist_AP'] = avg_dist_AP
-        #extra_parameters['avg_dist_AN'] = avg_dist_AN
-        
         extra_parameters['mean_pixel'] = vgg_mean_pixel
         extra_parameters.update(gram_matrix_dict)
 
