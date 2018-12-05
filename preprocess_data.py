@@ -138,7 +138,9 @@ def _preprocess_images(source, image_array, save_path, num_images):
     """
 
     random_indices = range(len(image_array))
-    random.shuffle(random_indices)
+
+    if num_images == 3:
+        random.shuffle(random_indices)
 
     total_nr_images = len(image_array)    
 

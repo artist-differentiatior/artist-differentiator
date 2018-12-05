@@ -89,7 +89,7 @@ def generate_triplets(artist_dict, num_anchors):
                 triplet_array.append([painting, positive_painting, negative_painting]) # Add the new triplet to array
 
     return triplet_array
-
+"""
 def generate_touple(artist_dict, num):
 
     '''
@@ -172,4 +172,86 @@ def generate_touple(artist_dict, num):
     touple_array, answer = zip(*list_to_shuffle)
     
     return touple_array, answer
+    """
+
+def generate_touple(artist_dict):
+
+    '''
+    Generates triplets from a dictonary with artists as keys with painted paintings as value
+
+    Args:
+        artist_dict: (dict) Key (string): artist, value (array) corresponding paintings
+    '''
+
+    nr_paintings = 0
+    for artist in artist_dict.keys():
+        nr_paintings += len(artist_dict[artist])
+
+    assert nr_paintings % 2 == 0
+
+    touple_array = []
+    answer = []
+
+    num_same = 0
+    num_diff = 0
+
+    while artist_dict:
+
+        rand_artist = random.choice(artist_dict.keys())
+
+        if num_same <= num_diff and len(artist_dict[rand_artist]) > 1:
             
+            two_paintings = random.sample(artist_dict[rand_artist], 2)
+
+            painting1 = two_paintings[0]
+            painting2 = two_paintings[1]
+
+            artist_dict[rand_artist].remove(painting1)
+            artist_dict[rand_artist].remove(painting2)
+
+            if len(artist_dict[rand_artist]) == 0:
+                del artist_dict[rand_artist]
+            
+            touple_array.append([painting1, painting2])
+            answer.append(1)
+
+            num_same += 1
+
+        else:
+
+            other_artists = artist_dict.keys()
+            other_artists.remove(rand_artist)
+
+            second_artist = random.choice(other_artists)
+
+            painting1 = random.sample(artist_dict[rand_artist], 1)[0]
+
+            artist_dict[rand_artist].remove(painting1)
+
+            if len(artist_dict[rand_artist]) == 0:
+                del artist_dict[rand_artist]
+
+            painting2 = random.sample(artist_dict[second_artist], 1)[0]
+
+            artist_dict[second_artist].remove(painting2)
+
+            if len(artist_dict[second_artist]) == 0:
+                del artist_dict[second_artist]
+
+            touple_array.append([painting1, painting2])
+            answer.append(0)
+
+            num_diff += 1
+
+    return touple_array, answer
+
+if __name__ == "__main__":
+
+     
+    dict1 = parse_info_file("new_train_info.csv", "sample_triplet/")
+    print(generate_touple(dict1))
+
+
+
+    
+
