@@ -93,6 +93,7 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
     image_file_names = os.listdir(preprocessed_path)
     image_file_names.sort()
     artist_list = convert_dict_to_list(artist_dict)
+    done_image_names = []
 
     with tf.Session() as sess:
 
@@ -107,6 +108,10 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
 
                 img_file_name = image_file_names[count]
                 painting_name = img_file_name.split('-')[1]
+
+		if img_file_name in done_image_names:
+		    continue
+		done_image_names.append(img_file_name)
 
                 index = np.where(artist_list[:,1] == painting_name)
                 artist = np.asscalar(artist_list[index,0])
@@ -138,6 +143,10 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
 
                 img_file_name = image_file_names[count]
                 painting_name = img_file_name.split('-')[1]
+
+		if img_file_name in done_image_names:
+		    continue
+		done_image_names.append(img_file_name)
 
                 index = np.where(artist_list[:,1] == painting_name)
                 artist = np.asscalar(artist_list[index,0])
