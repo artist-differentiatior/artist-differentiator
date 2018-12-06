@@ -171,7 +171,7 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
 
     # Compute PCA
     scaler = StandardScaler()
-    pca = PCA(n_components=50)
+    pca = PCA(n_components=2)
 
     print('Computing PCA...')
     scaler.fit(all_grams)
