@@ -7,6 +7,7 @@ from argparse import ArgumentParser
 
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
+from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 
 from tqdm import tqdm # progressbar
@@ -44,11 +45,14 @@ def build_parser():
     parser.add_argument('--style-layers-indices', nargs='+', type=int,
             dest='style_layers_indices', help='Which layers to use(0-4)',
                         metavar='STYLE_LAYERS_INDICES', default=[3,4])
+    parser.add_argument('--mode',
+                        dest='mode', help='mode to run (pca or tsne) (default %(default)s)',
+                        metavar='type', default='tsne')
 
     return parser
 
 
-def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_layers_indices):
+def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_layers_indices, mode):
 
     """
     Computes pca for the supplied data and outputs figure pca.pdf
@@ -169,35 +173,71 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
                 all_grams.append(gram_all_layers)
                 
 
-    # Compute PCA
-    scaler = StandardScaler()
-    pca = PCA(n_components=2)
+    if mode == 'pca':
+                
+        # Compute PCA
+        scaler = StandardScaler()
+        pca = PCA(n_components=2)
 
-    print('Computing PCA...')
-    scaler.fit(all_grams)
-    standard_all_grams = scaler.transform(all_grams)
-    pca.fit(standard_all_grams)
+        print('Computing PCA...')
+        scaler.fit(all_grams)
+        standard_all_grams = scaler.transform(all_grams)
+        pca.fit(standard_all_grams)
 
-    n_colors = len(gram_dict.keys())
-    cmap = plt.get_cmap('gnuplot')
-    colors = [cmap(i) for i in np.linspace(0, 1, n_colors)]
+        n_colors = len(gram_dict.keys())
+        cmap = plt.get_cmap('gnuplot')
+        colors = [cmap(i) for i in np.linspace(0, 1, n_colors)]
 
-    plt.figure(1)
+        plt.figure(1)
 
-    i = 1
-    print('Applying PCA...')
-    for artist, gram in tqdm(gram_dict.iteritems()):
-        standard_gram = scaler.transform(gram)
-        pca_out = np.array(pca.transform(standard_gram))
-        pca_out = pca_out.T # Transpose to get shape (2, 1) 
+        i = 1
+        print('Applying PCA...')
+        for artist, gram in tqdm(gram_dict.iteritems()):
+            standard_gram = scaler.transform(gram)
+            pca_out = np.array(pca.transform(standard_gram))
+            pca_out = pca_out.T # Transpose to get shape (2, 1) 
     
-        plt.scatter(pca_out[0], pca_out[1], c=colors[i-1], label='Artist ' + str(i))
+            plt.scatter(pca_out[0], pca_out[1], c=colors[i-1], label='Artist ' + str(i))
 
-        i += 1
+            i += 1
         
-    plt.legend()
+        plt.legend()
 
-    plt.savefig('pca.pdf')
+        plt.savefig('pca.pdf')
+
+    else: # if tsne
+
+        scaler = StandardScaler()
+        pca = PCA(n_components=50)
+        tsne = TSNE(n_components=2)
+
+        print('Computing t-SNE...')
+        standard_all_grams = scaler.fit_transform(all_grams)
+        pca_all_grams = pca.fit_transform(standard_all_grams)
+        tsne.fit(pca_all_grams)
+
+        n_colors = len(gram_dict.keys())
+        cmap = plt.get_cmap('gnuplot')
+        colors = [cmap(i) for i in np.linspace(0, 1, n_colors)]
+
+        plt.figure(1)
+
+        i=1
+        print('Applying t-SNE...')
+        for artist, gram in tqdm(gram_dict.iteritems()):
+            standard_gram = scaler.transform(gram)
+            pca_gram = pca.transform(standard_gram)
+            tsne_out = np.array(tsne.transform(pca_gram))
+            tsne_out = pca_out.T # Transpose to get shape (2, 1) 
+    
+            plt.scatter(tsne_out[0], tsne_out[1], c=colors[i-1], label='Artist ' + str(i))
+
+            i += 1
+        
+        plt.legend()
+
+        plt.savefig('pca.pdf')
+        
 
     
             
@@ -220,12 +260,15 @@ if __name__ == "__main__":
 
     if options.type not in ['train', 'dev', 'test']:
         raise ValueError('Invalid type of data. Choose test, dev or train')
+
+    if options.type not in ['pca', 'tsne']:
+        raise ValueError('Invalid mode. Choose pca or tsne')
     
     apply_pca(
         options.weights,
         options.csv_file_path,
         options.preprocessed_path,
         options.type,
-        options.style_layers_indices
-    
+        options.style_layers_indices,
+        options.mode
     )
