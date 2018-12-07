@@ -82,7 +82,6 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
 
     image_styles = _generate_style(image_net, style_layers)
 
-    #gram_dict = {}
     all_grams = []
     corresponding_artists = []
 
@@ -96,7 +95,8 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
     artist_dict = parse_info_file_triplets(csv_file_path, preprocessed_path)
     image_file_names = os.listdir(preprocessed_path)
     image_file_names.sort()
-    artist_list = convert_dict_to_list(artist_dict)
+    artist_dict_list = convert_dict_to_list(artist_dict)
+    list_of_artists = []
     done_image_names = []
 
     with tf.Session() as sess:
@@ -119,8 +119,8 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
 		    continue
 		done_image_names.append(painting_name)
 
-                index = np.where(artist_list[:,1] == painting_name)
-                artist = np.asscalar(artist_list[index,0])
+                index = np.where(artist_dict_list[:,1] == painting_name)
+                artist = np.asscalar(artist_dict_list[index,0])
             
                 img = trained_vgg.preprocess(img, vgg_mean_pixel)
 
@@ -130,10 +130,9 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
                     gram = gram.reshape(gram.shape[0]*gram.shape[1]*gram.shape[2]) # Flatten gram matrices
                     gram_all_layers = np.concatenate((gram_all_layers, gram), axis=0) # Concatanate with gram matrices of other layers
 
-                #if artist not in gram_dict: # Add the gram data to the corresponding artists entry in dictionary
-                #    gram_dict[artist] = [gram_all_layers]
-                #else:
-                #    gram_dict[artist].append(gram_all_layers)
+
+		if artist not in list_of_artists:
+		    list_of_artists.append(artist)
 
                 all_grams.append(gram_all_layers)
                 corresponding_artists.append(artist)
@@ -156,8 +155,8 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
 		    continue
 		done_image_names.append(painting_name)
 
-                index = np.where(artist_list[:,1] == painting_name)
-                artist = np.asscalar(artist_list[index,0])
+                index = np.where(artist_dict_list[:,1] == painting_name)
+                artist = np.asscalar(artist_dict_list[index,0])
             
                 img = trained_vgg.preprocess(img, vgg_mean_pixel)
 
@@ -167,10 +166,8 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
                     gram = gram.reshape(gram.shape[0]*gram.shape[1]*gram.shape[2]) # Flatten gram matrices
                     gram_all_layers = np.concatenate((gram_all_layers, gram), axis=0) # Concatanate with gram matrices of other layers
 
-               # if artist not in gram_dict: # Add the gram data to the corresponding artists entry in dictionary
-               #     gram_dict[artist] = [gram_all_layers]
-               # else:
-               #     gram_dict[artist].append(gram_all_layers)
+		if artist not in list_of_artists:
+		    list_of_artists.append(artist)
 
                 all_grams.append(gram_all_layers)
                 corresponding_artists.append(artist)
@@ -187,21 +184,25 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
         standard_all_grams = scaler.transform(all_grams)
         pca.fit(standard_all_grams)
 
-        n_colors = len(artist_list)
+        n_colors = len(list_of_artists)
         cmap = plt.get_cmap('gnuplot')
         colors = [cmap(i) for i in np.linspace(0, 1, n_colors)]
 
         plt.figure(1)
 
-        
+	        
         print('Applying PCA...')
-        for i in range(len(all_grams)):
+	label_checker = []
+        for i in tqdm(range(len(all_grams))):
             standard_gram = scaler.transform(gram[i])
             pca_out = np.array(pca.transform(standard_gram))
             pca_out = pca_out.T # Transpose to get shape (2, 1)
 
             artist = corresponding_artists[i]
-            plt.scatter(pca_out[0], pca_out[1], c=colors[artist_list.index(artist)], label=artist)
+	    if artist not in label_checker:
+            	plt.scatter(pca_out[0], pca_out[1], c=colors[list_of_artists.index(artist)], label=artist)
+	    else:
+		plt.scatter(pca_out[0], pca_out[1], c=colors[list_of_artists.index(artist)])
 
         
         plt.legend()
@@ -219,26 +220,29 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
         pca_all_grams = pca.fit_transform(standard_all_grams)
         tsne_all_grams = tsne.fit_transform(pca_all_grams)
 
-        n_colors = len(artist_list)
+        n_colors = len(list_of_artists)
         cmap = plt.get_cmap('gnuplot')
         colors = [cmap(i) for i in np.linspace(0, 1, n_colors)]
 
         plt.figure(1)
 
-        i=1
+        label_checker = []
         print('Applying t-SNE...')
-        for i in range(len(tsne_all_grams)):
+        for i in tqdm(range(len(tsne_all_grams))):
             tsne_out = np.array(tsne_all_grams[i])
-            tsne_out = pca_out.T # Transpose to get shape (2, 1) 
-
+            tsne_out = tsne_out.T # Transpose to get shape (2, 1) 
+	    
             artist = corresponding_artists[i]
-            plt.scatter(tsne_out[0], tsne_out[1], c=colors[artist_list.index(artist)], label=artist)
+            if artist not in label_checker:
+		plt.scatter(tsne_out[0], tsne_out[1], c=colors[list_of_artists.index(artist)], label=artist)
+		label_checker.append(artist)
+	    else:
+		plt.scatter(tsne_out[0], tsne_out[1], c=colors[list_of_artists.index(artist)])
 
-            i += 1
         
         plt.legend()
 
-        plt.savefig('pca.pdf')
+        plt.savefig('tsne.pdf')
         
 
     
