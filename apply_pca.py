@@ -82,8 +82,9 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
 
     image_styles = _generate_style(image_net, style_layers)
 
-    gram_dict = {}
+    #gram_dict = {}
     all_grams = []
+    corresponding_artists = []
 
     # Initialize image loader
     if data_type == 'train':
@@ -129,12 +130,13 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
                     gram = gram.reshape(gram.shape[0]*gram.shape[1]*gram.shape[2]) # Flatten gram matrices
                     gram_all_layers = np.concatenate((gram_all_layers, gram), axis=0) # Concatanate with gram matrices of other layers
 
-                if artist not in gram_dict: # Add the gram data to the corresponding artists entry in dictionary
-                    gram_dict[artist] = [gram_all_layers]
-                else:
-                    gram_dict[artist].append(gram_all_layers)
+                #if artist not in gram_dict: # Add the gram data to the corresponding artists entry in dictionary
+                #    gram_dict[artist] = [gram_all_layers]
+                #else:
+                #    gram_dict[artist].append(gram_all_layers)
 
                 all_grams.append(gram_all_layers)
+                corresponding_artists.append(artist)
                 
 
                 
@@ -165,12 +167,13 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
                     gram = gram.reshape(gram.shape[0]*gram.shape[1]*gram.shape[2]) # Flatten gram matrices
                     gram_all_layers = np.concatenate((gram_all_layers, gram), axis=0) # Concatanate with gram matrices of other layers
 
-                if artist not in gram_dict: # Add the gram data to the corresponding artists entry in dictionary
-                    gram_dict[artist] = [gram_all_layers]
-                else:
-                    gram_dict[artist].append(gram_all_layers)
+               # if artist not in gram_dict: # Add the gram data to the corresponding artists entry in dictionary
+               #     gram_dict[artist] = [gram_all_layers]
+               # else:
+               #     gram_dict[artist].append(gram_all_layers)
 
                 all_grams.append(gram_all_layers)
+                corresponding_artists.append(artist)
                 
 
     if mode == 'pca':
@@ -184,22 +187,22 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
         standard_all_grams = scaler.transform(all_grams)
         pca.fit(standard_all_grams)
 
-        n_colors = len(gram_dict.keys())
+        n_colors = len(artist_list)
         cmap = plt.get_cmap('gnuplot')
         colors = [cmap(i) for i in np.linspace(0, 1, n_colors)]
 
         plt.figure(1)
 
-        i = 1
+        
         print('Applying PCA...')
-        for artist, gram in tqdm(gram_dict.iteritems()):
-            standard_gram = scaler.transform(gram)
+        for i in range(len(all_grams)):
+            standard_gram = scaler.transform(gram[i])
             pca_out = np.array(pca.transform(standard_gram))
-            pca_out = pca_out.T # Transpose to get shape (2, 1) 
-    
-            plt.scatter(pca_out[0], pca_out[1], c=colors[i-1], label='Artist ' + str(i))
+            pca_out = pca_out.T # Transpose to get shape (2, 1)
 
-            i += 1
+            artist = corresponding_artists[i]
+            plt.scatter(pca_out[0], pca_out[1], c=colors[artist_list.index(artist)], label=artist)
+
         
         plt.legend()
 
@@ -214,9 +217,9 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
         print('Computing t-SNE...')
         standard_all_grams = scaler.fit_transform(all_grams)
         pca_all_grams = pca.fit_transform(standard_all_grams)
-        tsne.fit(pca_all_grams)
+        tsne_all_grams = tsne.fit_transform(pca_all_grams)
 
-        n_colors = len(gram_dict.keys())
+        n_colors = len(artist_list)
         cmap = plt.get_cmap('gnuplot')
         colors = [cmap(i) for i in np.linspace(0, 1, n_colors)]
 
@@ -224,13 +227,12 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
 
         i=1
         print('Applying t-SNE...')
-        for artist, gram in tqdm(gram_dict.iteritems()):
-            standard_gram = scaler.transform(gram)
-            pca_gram = pca.transform(standard_gram)
-            tsne_out = np.array(tsne.transform(pca_gram))
+        for i in range(len(tsne_all_grams)):
+            tsne_out = np.array(tsne_all_grams[i])
             tsne_out = pca_out.T # Transpose to get shape (2, 1) 
-    
-            plt.scatter(tsne_out[0], tsne_out[1], c=colors[i-1], label='Artist ' + str(i))
+
+            artist = corresponding_artists[i]
+            plt.scatter(tsne_out[0], tsne_out[1], c=colors[artist_list.index(artist)], label=artist)
 
             i += 1
         
