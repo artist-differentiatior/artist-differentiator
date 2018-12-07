@@ -261,7 +261,7 @@ if __name__ == "__main__":
     if options.type not in ['train', 'dev', 'test']:
         raise ValueError('Invalid type of data. Choose test, dev or train')
 
-    if options.type not in ['pca', 'tsne']:
+    if options.mode not in ['pca', 'tsne']:
         raise ValueError('Invalid mode. Choose pca or tsne')
     
     apply_pca(
