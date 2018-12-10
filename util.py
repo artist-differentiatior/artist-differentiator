@@ -43,7 +43,20 @@ def parse_info_file(csv_file_path, paintings_file_path):
             else:
                 artist_dict[artist_name].append(artist_dict_info)
 
-        
+    n_artists_before = len(artist_dict.keys())
+    
+    artists_to_delete = []
+    for artist, paintings in artist_dict.iteritems():
+	if len(paintings) <= 1:
+	    print('Deleted artist: {}'.format(artist))
+	    artists_to_delete.append(artist)
+
+    for artist in artists_to_delete:
+	del artist_dict[artist]
+
+    n_artists_after = len(artist_dict.keys())
+    print('Artists before: {}\nArtists after: {}'.format(n_artists_before, n_artists_after))  
+      
     return artist_dict
 
 def parse_info_file_triplets(csv_file_path, paintings_file_path):

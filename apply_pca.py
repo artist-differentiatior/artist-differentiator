@@ -180,9 +180,8 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
         pca = PCA(n_components=2)
 
         print('Computing PCA...')
-        scaler.fit(all_grams)
-        standard_all_grams = scaler.transform(all_grams)
-        pca.fit(standard_all_grams)
+        standard_all_grams = scaler.fit_transform(all_grams)
+        pca_all_grams = pca.fit_transform(standard_all_grams)
 
         n_colors = len(list_of_artists)
         cmap = plt.get_cmap('gnuplot')
@@ -193,14 +192,14 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
 	        
         print('Applying PCA...')
 	label_checker = []
-        for i in tqdm(range(len(all_grams))):
-            standard_gram = scaler.transform(gram[i])
-            pca_out = np.array(pca.transform(standard_gram))
+        for i in tqdm(range(len(pca_all_grams))):
+            pca_out = np.array(pca_all_grams[i])
             pca_out = pca_out.T # Transpose to get shape (2, 1)
 
             artist = corresponding_artists[i]
 	    if artist not in label_checker:
             	plt.scatter(pca_out[0], pca_out[1], c=colors[list_of_artists.index(artist)], label=artist)
+                label_checker.append(artist)
 	    else:
 		plt.scatter(pca_out[0], pca_out[1], c=colors[list_of_artists.index(artist)])
 
