@@ -29,14 +29,17 @@ def build_parser():
     parser.add_argument('--num-anchors', type=int,
         dest='num_anchors', help='Number of anchors for each image',
             metavar='NUM_ANCHORS', default=3)
-    parser.add_argument('--test-dev-ratio', type=float,
-        dest='test_dev_ratio', help='Ratio of test and dev data. If 0 then no test/dev data will be created',
-            metavar='TEST_DEV_RATIO', default=0)
+    parser.add_argument('--test-ratio', type=float,
+        dest='test_ratio', help='Ratio of test data. If 0 then no test data will be created',
+            metavar='TEST_RATIO', default=0)
+    parser.add_argument('--dev-ratio', type=float,
+        dest='dev_ratio', help='Ratio of dev data. If 0 then no dev data will be created',
+            metavar='DEV_RATIO', default=0)
 
     return parser
 
 
-def preprocess_data(source, info_file, num_anchors, test_dev_ratio):
+def preprocess_data(source, info_file, num_anchors, test_ratio, dev_ratio):
 
     """
     Copies images from the source folder and rescale them to size 224x224. These
@@ -47,31 +50,37 @@ def preprocess_data(source, info_file, num_anchors, test_dev_ratio):
         info_file: (str) path to csv file contatining information about images in source directory
     """
 
-    _create_directory(TRAIN_DIR)
-
+    if dev_ratio != 0:
+         _create_directory(DEV_DIR)
+    if test_ratio != 0:
+         _create_directory(TEST_DIR)
+    if test_ratio + dev_ratio < 1:
+         _create_directory(TRAIN_DIR)
+    
     train_dict = util.parse_info_file(info_file, source)
 
-    if test_dev_ratio != 0:
-        _create_directory(DEV_DIR)
-        _create_directory(TEST_DIR)
+    if dev_ratio != 0 or test_ratio != 0:
 
         length_dict = sum([len(value) for key, value in train_dict.items()])
+        
 
-        num_paintings = int(math.ceil(length_dict * test_dev_ratio))
-        dev_dict, train_dict = pick_n_from_dict(train_dict, num_paintings)
-        test_dict, train_dict = pick_n_from_dict(train_dict, num_paintings)
+        if dev_ratio != 0:
+            num_paintings = int(math.ceil(length_dict * dev_ratio))
+            dev_dict, train_dict = pick_n_from_dict(train_dict, num_paintings)
+            touple_array, answer = util.generate_touple(dev_dict, 4)
+            _preprocess_images(source, touple_array, DEV_DIR, 2)
+            _write("dev_answer", str(answer))
+            print("dev_data complete!")
 
-        touple_array, answer = util.generate_touple(dev_dict, 4)
-        _preprocess_images(source, touple_array, DEV_DIR, 2)
-        _write("dev_answer", str(answer))
-        print("dev_data complete!")
+        if test_ratio != 0:
+            num_paintings = int(math.ceil(length_dict * test_ratio))
+            test_dict, train_dict = pick_n_from_dict(train_dict, num_paintings)         
+            touple_array, answer = util.generate_touple(test_dict, 4)
+            _preprocess_images(source, touple_array, TEST_DIR, 2)
+            _write("test_answer", str(answer))
+            print("test_data complete!")
 
-        touple_array, answer = util.generate_touple(test_dict, 4)
-        _preprocess_images(source, touple_array, TEST_DIR, 2)
-        _write("test_answer", str(answer))
-        print("test_data complete!")
-
-    if test_dev_ratio < 0.5:
+    if test_ratio + dev_ratio < 1:
         triplets_array = util.generate_triplets(train_dict, num_anchors)
         _preprocess_images(source, triplets_array, TRAIN_DIR, 3)
         print("train_data complete!")
@@ -192,11 +201,22 @@ def main():
     if not os.path.isdir(options.source):
         parser.error("The source directory %s does not exist.)" % options.source)
 
+    if options.dev_ratio + options.test_ratio > 1:
+        raise ValueError('Invalid test/dev/train data ratios. Must sum to 1.')
+    if options.dev_ratio + options.test_ratio == 1:
+        buffer = raw_input("With the current data ratios, no training data will be created. Proceed? (Y/N):\n")
+        if buffer != "Y" and buffer != "y":
+            print("Exit")
+            exit()
+        
+    
+
     preprocess_data(source=options.source,
                     info_file=options.info_file,
                     num_anchors=options.num_anchors,
-                    test_dev_ratio=options.test_dev_ratio)
-
-
+                    test_ratio=options.test_ratio,
+                    dev_ratio=options.dev_ratio
+    )
+  
 if __name__ == "__main__":
     main()
