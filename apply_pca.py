@@ -184,10 +184,12 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
         pca_all_grams = pca.fit_transform(standard_all_grams)
 
         n_colors = len(list_of_artists)
-        cmap = plt.get_cmap('gnuplot')
+        cmap = plt.get_cmap('hsv')
         colors = [cmap(i) for i in np.linspace(0, 1, n_colors)]
 
-        plt.figure(1)
+        fig = plt.figure()
+	ax = plt.subplot(111)
+	fig.suptitle('PCA of style encodings')
 
 	        
         print('Applying PCA...')
@@ -203,8 +205,10 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
 	    else:
 		plt.scatter(pca_out[0], pca_out[1], c=colors[list_of_artists.index(artist)])
 
-        
-        plt.legend()
+        box = ax.get_position()
+	ax.set_position([box.x0, box.y0, box.width*0.65, box.height])        
+
+        ax.legend(title='Artists', loc='center left', bbox_to_anchor=(1, 0.5))
 
         plt.savefig('pca.pdf')
 
@@ -220,10 +224,13 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
         tsne_all_grams = tsne.fit_transform(pca_all_grams)
 
         n_colors = len(list_of_artists)
-        cmap = plt.get_cmap('gnuplot')
+        cmap = plt.get_cmap('hsv')
         colors = [cmap(i) for i in np.linspace(0, 1, n_colors)]
 
-        plt.figure(1)
+        fig = plt.figure()
+	ax = plt.subplot(111)
+	fig.suptitle('t-SNE of style encodings')
+        
 
         label_checker = []
         print('Applying t-SNE...')
@@ -233,13 +240,15 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
 	    
             artist = corresponding_artists[i]
             if artist not in label_checker:
-		plt.scatter(tsne_out[0], tsne_out[1], c=colors[list_of_artists.index(artist)], label=artist)
+		ax.scatter(tsne_out[0], tsne_out[1], c=colors[list_of_artists.index(artist)], label=artist)
 		label_checker.append(artist)
 	    else:
-		plt.scatter(tsne_out[0], tsne_out[1], c=colors[list_of_artists.index(artist)])
+		ax.scatter(tsne_out[0], tsne_out[1], c=colors[list_of_artists.index(artist)])
 
-        
-        plt.legend()
+	box = ax.get_position()
+	ax.set_position([box.x0, box.y0, box.width*0.65, box.height])        
+
+        ax.legend(title='Artists', loc='center left', bbox_to_anchor=(1, 0.5))
 
         plt.savefig('tsne.pdf')
         
