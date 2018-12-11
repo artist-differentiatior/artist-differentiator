@@ -1,6 +1,7 @@
 import csv
 import os
 import random
+
 import numpy as np
 
 
@@ -14,7 +15,6 @@ def parse_info_file(csv_file_path, paintings_file_path):
         csv_file_path: (str) path to csv file containing info about dataset
         paintings_file_path: (str) path to directory containing dataset
     '''
-    file_names = []
     
     file_names = os.listdir(paintings_file_path)
 
@@ -22,7 +22,8 @@ def parse_info_file(csv_file_path, paintings_file_path):
 
         info_reader = csv.reader(info_file, dialect="excel", delimiter=",", quotechar="\"")
 
-        artist_dict = {} # key=artist, value=[[file_name, style], ...]
+        # key=artist, value=[[file_name, style], ...]
+        artist_dict = {} 
         info = info_reader.next()
         
         artist_index = info.index("artist")
@@ -46,18 +47,20 @@ def parse_info_file(csv_file_path, paintings_file_path):
     n_artists_before = len(artist_dict.keys())
     
     artists_to_delete = []
+
     for artist, paintings in artist_dict.iteritems():
-	if len(paintings) <= 1:
-	    print('Deleted artist: {}'.format(artist))
-	    artists_to_delete.append(artist)
+        if len(paintings) <= 1:
+            print('Deleted artist: {}'.format(artist))
+            artists_to_delete.append(artist)
 
     for artist in artists_to_delete:
-	del artist_dict[artist]
+	    del artist_dict[artist]
 
     n_artists_after = len(artist_dict.keys())
     print('Artists before: {}\nArtists after: {}'.format(n_artists_before, n_artists_after))  
       
     return artist_dict
+
 
 def parse_info_file_triplets(csv_file_path, paintings_file_path):
 
@@ -72,16 +75,16 @@ def parse_info_file_triplets(csv_file_path, paintings_file_path):
     file_names = []
     
     file_names = os.listdir(paintings_file_path)
+
     for i in range(len(file_names)):
         file_names[i] = file_names[i].split('-')[1]
-
-    
 
     with open(csv_file_path, "r") as info_file:
 
         info_reader = csv.reader(info_file, dialect="excel", delimiter=",", quotechar="\"")
 
-        artist_dict = {} # key=artist, value=[[file_name, style], ...]
+        # key=artist, value=[[file_name, style], ...]
+        artist_dict = {}
         info = info_reader.next()
         
         artist_index = info.index("artist")
@@ -102,11 +105,19 @@ def parse_info_file_triplets(csv_file_path, paintings_file_path):
                 artist_dict[artist_name] = [artist_dict_info]
             else:
                 artist_dict[artist_name].append(artist_dict_info)
-
         
     return artist_dict
 
+
 def convert_dict_to_list(artist_dict):
+
+    """
+    Converts a dictionary containing artists and painting into a list with touples where 
+    each touples consist of painting names and the corresponding artist.
+
+    Args:
+    artist_dict: (dict) Dictionary, keys: artist, value list with paintings
+    """
 
     new_list = []
     for artist, paintings in artist_dict.iteritems():
@@ -155,101 +166,20 @@ def generate_triplets(artist_dict, num_anchors):
                 random_artist = random.choice(artists)
                 negative_painting = random.choice(artist_dict[random_artist])
 
-                triplet_array.append([painting, positive_painting, negative_painting]) # Add the new triplet to array
+                # Add the new triplet to array
+                triplet_array.append([painting, positive_painting, negative_painting])
 
     return triplet_array
-"""
-def generate_touple(artist_dict, num):
 
-    '''
-    Generates triplets from a dictonary with artists as keys with painted paintings as value
-
-    Args:
-        artist_dict: (dict) Key (string): artist, value (array) corresponding paintings
-        num: (int) number of times to iterate over same painting to create a touple
-    '''
-
-    artist_keys = artist_dict.keys()
-    nr_paintings = 0
-    for artist in artist_keys:
-        nr_paintings += len(artist_dict[artist])
-
-    touple_array = []
-    answer = []
-
-    for artist in artist_keys:
-        for painting in artist_dict[artist]:
-            for count in range(num):
-                    
-                
-                if sum(answer) > 0.5*len(answer): # If more positives - pick a random negative
-
-                    artist1 = artist
-                    painting1 = painting
-                
-                    artist2 = artist1
-                    while artist2 == artist1:
-                        artist2 = artist_keys[random.randint(0, len(artist_keys)-1)] # random different artist
-
-                    painting2 = artist_dict[artist2][random.randint(0, len(artist_dict[artist2])-1)] # random painting by that artist
-
-                    while ([painting1, painting2] in touple_array) or ([painting2, painting1] in touple_array): # if we already have that touple - try again
-                        
-                        artist2 = artist1
-                        while artist2 == artist1:
-                            artist2 = artist_keys[random.randint(0, len(artist_keys)-1)] # random different artist
-
-                        painting2 = artist_dict[artist2][random.randint(0, len(artist_dict[artist2])-1)] # random painting by that artist
-
-                    touple_array.append([painting1, painting2])
-                    answer.append(1 if artist1 == artist2 else 0)
-
-                elif sum(answer) <= 0.5*len(answer): # If more negatives - pick a random positive
-
-                    artist1 = artist
-                    painting1 = painting
-
-                    artist2 = artist1 # same artist
-
-                    painting2 = painting1
-                    while painting2 == painting1:
-                        painting2 = artist_dict[artist2][random.randint(0, len(artist_dict[artist2])-1)] # different painting
-                                                         
-                    tries = 0
-                    while ([painting1, painting2] in touple_array) or ([painting2, painting1] in touple_array): # if we already have that touple - try again
-
-                        if tries == 100: # If tried a 100 times - give up
-                            break
-                                                         
-                        painting2 = painting1
-                        while painting2 == painting1:
-                            painting2 = artist_dict[artist2][random.randint(0, len(artist_dict[artist2])-1)] # different painting
-
-                        tries += 1
-                                                             
-                    if tries == 100: # if failed - don't make more touples for this painting
-                        break
-
-                    touple_array.append([painting1, painting2])
-                    answer.append(1 if artist1 == artist2 else 0)
-                
-
-
-    # Shuffle the arrays so we do not to get [1,0,1,0,1,0 ... ]
-    list_to_shuffle = list(zip(touple_array, answer))
-    random.shuffle(list_to_shuffle)
-    touple_array, answer = zip(*list_to_shuffle)
-    
-    return touple_array, answer
-    """
 
 def generate_touple(artist_dict, num):
 
     '''
-    Generates triplets from a dictonary with artists as keys with painted paintings as value
+    Generates touple from a dictonary with artists as keys with painted paintings as value
 
     Args:
-        artist_dict: (dict) Key (string): artist, value (array) corresponding paintings
+    artist_dict: (dict) Key (string): artist, value (array) corresponding paintings
+    num: (int) Number of times to generate test-pairs from data
     '''
 
     nr_paintings = 0
@@ -332,14 +262,3 @@ def generate_touple(artist_dict, num):
     touple_array, answer = zip(*list_to_shuffle)
 
     return touple_array, answer
-
-if __name__ == "__main__":
-
-     
-    dict1 = parse_info_file("new_train_info.csv", "sample_triplet/")
-    print(generate_touple(dict1))
-
-
-
-    
-

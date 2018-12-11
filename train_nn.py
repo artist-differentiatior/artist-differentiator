@@ -2,19 +2,17 @@ import os
 import time
 import csv
 import datetime
-from collections import OrderedDict
-from tqdm import tqdm
 import matplotlib.pyplot as plt
-
-from PIL import Image
 import numpy as np
 import tensorflow as tf
-
 import trained_vgg
+import logging
 
+from collections import OrderedDict
+from tqdm import tqdm
+from PIL import Image
 from load_images import *
 from util import parse_info_file_triplets, convert_dict_to_list
-import logging
 
 
 NAME_STYLE_LAYERS = ['relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1']
@@ -121,8 +119,11 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_na
         checkpoint_counter = 0
 
         for i in range(epochs):
+
             epoch_start = time.time()
+
             if i > 0:
+
                 elapsed = time.time() - start
                 # take average of last couple steps to get time per iteration
                 remaining = np.mean(epoch_times[-10:]) * (epochs - i)
@@ -132,8 +133,10 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_na
                     hms(elapsed),
                     hms(remaining)
                 )
+
                 print(epoch_info)
                 logging.info(epoch_info)
+
             else:
                 print('Epoch %4d/%4d' % (i + 1, epochs))
             
@@ -208,6 +211,16 @@ def train_nn(network, epochs, learning_rate, beta1, beta2, epsilon, save_file_na
         
             
 def _generate_style(net, style_layers):
+
+    """
+    Generate a dictionary with gram matrices of the style layers specified in
+    the parameter style_layers
+
+    Args:
+        net: (dict) Dictionary containing the neural net
+        style_layers: (list) List specifying which layers to extract gram matrices from
+    """
+    
     styles = {}
 
     for layer in style_layers:
@@ -220,14 +233,25 @@ def _generate_style(net, style_layers):
 
 
 def hms(seconds):
+
+    """
+    Converts seconds to h,m,s format
+
+    Args:
+        seconds: (int) seconds to convert
+    """
+
     seconds = int(seconds)
     hours = (seconds // (60 * 60))
     minutes = (seconds // 60) % 60
     seconds = seconds % 60
+
     if hours > 0:
         return '%d hr %d min' % (hours, minutes)
+
     elif minutes > 0:
         return '%d min %d sec' % (minutes, seconds)
+
     else:
         return '%d sec' % seconds
 
