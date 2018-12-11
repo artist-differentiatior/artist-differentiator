@@ -24,6 +24,10 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 def build_parser():
 
+    """
+    Build an input parser
+    """
+
     parser = ArgumentParser()
     parser.add_argument('--source',
         dest='source', help='Source folder with images to use as data',
@@ -53,6 +57,9 @@ def preprocess_data(source, info_file, num_anchors, test_ratio, dev_ratio):
     Args: 
         source: (str) path to source directory
         info_file: (str) path to csv file contatining information about images in source directory
+        num_anchors: (int) Number of anchors to create for each painting
+        test_ratio: (float) Percentage of data to classify as test data
+        dev_ratio: (float) Percentage of data to classify as dev data
     """
 
     if dev_ratio != 0:
@@ -67,7 +74,6 @@ def preprocess_data(source, info_file, num_anchors, test_ratio, dev_ratio):
     if dev_ratio != 0 or test_ratio != 0:
 
         length_dict = sum([len(value) for key, value in train_dict.items()])
-        
 
         if dev_ratio != 0:
             num_paintings = int(math.ceil(length_dict * dev_ratio))
@@ -94,12 +100,32 @@ def preprocess_data(source, info_file, num_anchors, test_ratio, dev_ratio):
 
 def _write(filename, text):
 
+    """
+    Write text to a txt file
+
+    Args:
+        filename: (string) Name of file to write to
+        text: (string) Text to write to the file
+    """
+
     file = open(filename + ".txt","w") 
     file.write(text) 
     file.close() 
         
         
 def pick_n_from_dict(dictionary, num):
+
+    """
+
+    Takes a dictionary containing lists of paintings. The function
+    then move "num" of the paintings into a new dictionary and remove 
+    them from the old.
+
+    Args:
+        dictionary: (dict) Dictinary to remove paintings from
+        num: (int) Number of paintings to remove
+
+    """
 
     sub_dict = {}
 
@@ -110,6 +136,7 @@ def pick_n_from_dict(dictionary, num):
         random_value = random.choice(dictionary[random_key])
 
         dictionary[random_key].remove(random_value)
+
         if len(dictionary[random_key]) == 0:
             del dictionary[random_key]
 
@@ -121,16 +148,27 @@ def pick_n_from_dict(dictionary, num):
     return sub_dict, dictionary
 
 
-
 def _create_directory(directory):
 
+    """
+    Create a directory. Checks if directory already exist and prompt the user
+    if he wants to replace it.
+
+    Args:
+        directory: (string) Name of directory to create
+    """
+
     dir_path = os.path.dirname(os.path.realpath(__file__))
+
     if os.path.exists(directory):
+
         buffer = raw_input("The folder: " + dir_path + "/" + directory + " already exist." + \
         "To proceed that folder needs to be removed. Do you want to remove it now? (Y/N):\n")
+
         if buffer != "Y" and buffer != "y":
             print("Exit")
             exit()
+
         shutil.rmtree(directory)
         print("The folder: " + dir_path + "/" + directory + " sucessfully removed.")
     
@@ -198,6 +236,13 @@ def _create_preprocessed_triplet(source, num, images, save_path, num_images):
 
 
 def main():
+
+    """
+
+    Start preprocessing data
+    
+    """
+
     parser = build_parser()
     options = parser.parse_args()
 

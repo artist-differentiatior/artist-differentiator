@@ -1,13 +1,10 @@
 import os
-
+import math
 import numpy as np
 import scipy.misc
 
 from train_nn import train_nn
-
-import math
 from argparse import ArgumentParser
-
 from PIL import Image
 
 # default arguments
@@ -21,6 +18,10 @@ LOSS_THRESHOLD = 1e12
 POSITIVE_WEIGHT = 1
 
 def build_parser():
+
+    """
+    Build an input parser
+    """
 
     parser = ArgumentParser()
     parser.add_argument('--epochs', type=int,
@@ -67,6 +68,11 @@ def build_parser():
 
 
 def main():
+
+    """
+    Start a training session
+    """
+
     parser = build_parser()
     options = parser.parse_args()
 
