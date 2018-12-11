@@ -184,8 +184,9 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
         pca_all_grams = pca.fit_transform(standard_all_grams)
 
         n_colors = len(list_of_artists)
-        cmap = plt.get_cmap('hsv')
+        cmap = plt.get_cmap('gist_rainbow')
         colors = [cmap(i) for i in np.linspace(0, 1, n_colors)]
+	
 
         fig = plt.figure()
 	ax = plt.subplot(111)
@@ -224,7 +225,7 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
         tsne_all_grams = tsne.fit_transform(pca_all_grams)
 
         n_colors = len(list_of_artists)
-        cmap = plt.get_cmap('hsv')
+        cmap = plt.get_cmap('gist_rainbow')
         colors = [cmap(i) for i in np.linspace(0, 1, n_colors)]
 
         fig = plt.figure()

@@ -8,6 +8,8 @@ import math
 from argparse import ArgumentParser
 from PIL.Image import LANCZOS
 from PIL.ImageOps import fit
+from PIL import Image
+from PIL import ImageFile
 from keras.preprocessing.image import load_img
 from tqdm import tqdm
 
@@ -15,6 +17,9 @@ IMGS_DIM_2D = (224, 224)
 TRAIN_DIR = "train_data"
 DEV_DIR = "dev_data"
 TEST_DIR = "test_data"
+
+Image.MAX_IMAGE_PIXELS = None
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 def build_parser():
