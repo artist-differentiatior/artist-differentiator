@@ -39,12 +39,21 @@ class Image_Loader:
 
     def __iter__(self):
 
+        """
+        Initiate iterator
+        """
+
         self.__mini_batch_nr = 0
         self.__start_im = 0
         
         return self
 
     def next(self):
+
+        """
+        Load either 1,2 or 3 images from a given directory each iteration
+        until it has gone through the entire directory.
+        """
         
         if self.__mini_batch_nr < self.__num_mini_batches:
 

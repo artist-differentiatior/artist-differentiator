@@ -20,6 +20,10 @@ VGG_PATH = 'vgg_net_original.mat'
 
 def build_parser():
 
+    """
+    Build an input parser
+    """
+
     parser = ArgumentParser()
     parser.add_argument('--test-path',
         dest='test_path', help='Path to folder with images to test on',
@@ -40,16 +44,15 @@ def build_parser():
 def evaluate(test_path, weight_path, style_layers_indices, data_type):
 
     """
-    Trains the neural net using triplet loss
 
-    Args: 
-        network: (str) filepath to pretrained network parameters
-        epochs: (int) number of training epochs
-        learning_rate: (float) learning rate
-        beta1: (float) momentum parameter for adam optimizer
-        beta2: (float) RMSprop parameter for adam optimizer
-        epsilon: (float) prevent division with 0 in adaom optimizer
-        batch_size: (int) size of mini batches
+    Evaluate the weights that has been trained.
+
+    Args:
+        test_path: (string) Path to directory with test images
+        weight_path: (string) Path to the trained weights
+        style_layers_indices: (list) List of which layers to extract style from (should 
+                                     match the layers the weights has been trained on)
+        data_type: (string) If data is test, dev or train
 
     """
 
@@ -79,12 +82,10 @@ def evaluate(test_path, weight_path, style_layers_indices, data_type):
     else:
         image_loader = Image_Loader(test_path, 1, load_size=3)
 
-
     vgg_mean_pixel = parameter_dict['mean_pixel']
     del parameter_dict['mean_pixel']
     
     gram_matrix_dict = parameter_dict
-
 
     prediction = []
 
@@ -156,9 +157,18 @@ def evaluate(test_path, weight_path, style_layers_indices, data_type):
         print('F1 Score: %f' % f1_accuracy)
         print('AUC Score: %f' % auc_score)
 
-    
             
 def _generate_style(net, style_layers):
+
+    """
+    Generate a dictionary with gram matrices of the style layers specified in
+    the parameter style_layers
+
+    Args:
+        net: (dict) Dictionary containing the neural net
+        style_layers: (list) List specifying which layers to extract gram matrices from
+    """
+
     styles = {}
 
     for layer in style_layers:
@@ -169,7 +179,18 @@ def _generate_style(net, style_layers):
 
     return styles
 
+
 def _find_closest_artist(gram_matrix_dict, gram):
+
+    """
+
+    Compute which of the gram matrices in "gram_matrix_dict" the "gram" matrix is closest to.
+
+    Args:
+        gram_matrix_dict: (dict) Dictionary containing gram matrices corresponding to an artist
+        gram: (numpy array) Gram matrix to be evaluated
+
+    """
 
     min = 1e12
     for artist, average_gram in gram_matrix_dict.iteritems():
@@ -184,6 +205,13 @@ def _find_closest_artist(gram_matrix_dict, gram):
     return closest_artist
 
 def main():
+
+    """
+
+    Start evaluating the weights
+
+    """
+
     parser = build_parser()
     options = parser.parse_args()
     

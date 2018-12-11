@@ -20,7 +20,7 @@ POSITIVE_WEIGHT = 1
 def build_parser():
 
     """
-    Build a input parser
+    Build an input parser
     """
 
     parser = ArgumentParser()
