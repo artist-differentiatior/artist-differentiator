@@ -1,23 +1,20 @@
 import os
 import time
-from shutil import copy2
-from collections import OrderedDict
 import csv
-from argparse import ArgumentParser
+import trained_vgg
 
+import numpy as np
+import tensorflow as tf
+import matplotlib.pyplot as plt
+
+from argparse import ArgumentParser
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from sklearn.manifold import TSNE
-import matplotlib.pyplot as plt
-
 from tqdm import tqdm # progressbar
-
 from PIL import Image
-import numpy as np
-import tensorflow as tf
-
-import trained_vgg
-
+from shutil import copy2
+from collections import OrderedDict
 from load_images import *
 from util import parse_info_file_triplets, convert_dict_to_list
 
@@ -103,7 +100,6 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
 
         sess.run(tf.global_variables_initializer())
 
-
         if data_type == 'train': # for train data
         
             count = 0
@@ -130,15 +126,11 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
                     gram = gram.reshape(gram.shape[0]*gram.shape[1]*gram.shape[2]) # Flatten gram matrices
                     gram_all_layers = np.concatenate((gram_all_layers, gram), axis=0) # Concatanate with gram matrices of other layers
 
-
 		if artist not in list_of_artists:
 		    list_of_artists.append(artist)
 
                 all_grams.append(gram_all_layers)
-                corresponding_artists.append(artist)
-                
-
-                
+                corresponding_artists.append(artist)              
                 
         else: # for test/dev data
 
@@ -171,7 +163,6 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
 
                 all_grams.append(gram_all_layers)
                 corresponding_artists.append(artist)
-                
 
     if mode == 'pca':
                 
@@ -252,10 +243,18 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
 
         plt.savefig('tsne.pdf')
         
-
-    
-            
+        
 def _generate_style(net, style_layers):
+
+    """
+    Generate a dictionary with gram matrices of the style layers specified in
+    the parameter style_layers
+
+    Args:
+        net: (dict) Dictionary containing the neural net
+        style_layers: (list) List specifying which layers to extract gram matrices from
+    """
+
     styles = {}
 
     for layer in style_layers:
