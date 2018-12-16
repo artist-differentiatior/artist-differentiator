@@ -4,7 +4,6 @@ artist_differentiator
 venv
 .*
 learn_tf
-*.jpg
 *.csv
 preprocessed_images*
 sample_triplet
