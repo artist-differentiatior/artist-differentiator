@@ -86,7 +86,7 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
     if data_type == 'train':
         image_loader = Image_Loader(preprocessed_path, 1, load_size=3)
     else:
-        image_loader = Image_Loader(preprocessed_path, 1, load_size=2)
+        image_loader = Image_Loader(preprocessed_path, 1, load_size=1)
 
     # Get dictionary of with all paintings in preprocessed_path, get list of file names
     artist_dict = parse_info_file_triplets(csv_file_path, preprocessed_path)
@@ -136,12 +136,12 @@ def apply_pca(weight_path, csv_file_path, preprocessed_path, data_type, style_la
 
             count = 0
             print('Computing gram matrices...')
-            for img, throw_away1 in tqdm(image_loader):
+            for img in tqdm(image_loader):
 
                 img_file_name = image_file_names[count]
                 painting_name = img_file_name.split('-')[1]
 
-                count += 2
+                count += 1
 
 		if painting_name in done_image_names:
 		    continue
