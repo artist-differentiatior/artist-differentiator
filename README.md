@@ -11,3 +11,16 @@ This script requires a directory contaning training images and a csv-file with i
 To start training the model:
 
 `python train_nn.py`
+
+generate data
+
+`python preprocess_data.py --source sample_data/ --info-file data_info.csv --test-ratio 1`
+
+test model
+
+`python evaluate.py --test-path test_data/ --weight-path weights_3_artists.mat --style-layers-indices 3 4 --type test`
+
+generate pca
+
+`python apply_pca.py --weights weights_3_artists.mat --csv data_info.csv --source test_data/ --type test --style-layers-indices 3 4 --mode pca`
+
