@@ -78,7 +78,7 @@ def preprocess_data(source, info_file, num_anchors, test_ratio, dev_ratio):
         if dev_ratio != 0:
             num_paintings = int(math.ceil(length_dict * dev_ratio))
             dev_dict, train_dict = pick_n_from_dict(train_dict, num_paintings)
-            touple_array, answer = util.generate_touple(dev_dict, 4)
+            touple_array, answer = util.generate_touple(dev_dict, 1)
             _preprocess_images(source, touple_array, DEV_DIR, 2)
             _write("dev_answer", str(answer))
             print("dev_data complete!")
@@ -86,7 +86,7 @@ def preprocess_data(source, info_file, num_anchors, test_ratio, dev_ratio):
         if test_ratio != 0:
             num_paintings = int(math.ceil(length_dict * test_ratio))
             test_dict, train_dict = pick_n_from_dict(train_dict, num_paintings)         
-            touple_array, answer = util.generate_touple(test_dict, 4)
+            touple_array, answer = util.generate_touple(test_dict, 1)
             _preprocess_images(source, touple_array, TEST_DIR, 2)
             _write("test_answer", str(answer))
             print("test_data complete!")

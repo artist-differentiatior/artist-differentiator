@@ -1,6 +1,7 @@
 import csv
 import os
 import random
+import copy
 
 import numpy as np
 
@@ -203,11 +204,11 @@ def generate_touple(artist_dict, num):
     num_same = 0
     num_diff = 0
 
-    original_artist_dict = artist_dict
+    original_artist_dict = copy.deepcopy(artist_dict)
 
     for count in range(num):
 
-        artist_dict = original_artist_dict
+        artist_dict = copy.deepcopy(original_artist_dict)
 
         while artist_dict:
 
