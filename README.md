@@ -1,6 +1,6 @@
 # artist-differentiator
 A siamese CNN model trained with triplet loss to identify if two paintings are painted by the same artist.
-This is one attempt at solving the problem presented in the 2016 Kaggle competition ["Painter by Numbers"](https://www.kaggle.com/c/painter-by-numbers).
+We have used the dataset provided in the 2016 Kaggle competition ["Painter by Numbers"](https://www.kaggle.com/c/painter-by-numbers).
 
 ## How it works
 The approach used is outlined in the figure below.
