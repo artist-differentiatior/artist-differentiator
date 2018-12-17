@@ -1,5 +1,12 @@
 # artist-differentiator
-A CNN trained with triplets to identify if two paintings are painted by same artist
+A siamese CNN model trained with triplets to identify if two paintings are painted by the same artist.
+
+The approach used is outlined in the figure below.
+
+![](https://github.com/josefmal/artist-differentiator/blob/master/figures/siamese_net.pdf "Siamese networks")
+
+For detailed descriptions on the architectures and methods used, refer to the paper on this project, available ![here](https://drive.google.com/drive/folders/1oRqil4zFwI-TcJiYQLB2p4_2Po44p0le?usp=sharing).
+
 # Requirements
 The requirements for this project can be found in: requirements.txt.
 # Running
