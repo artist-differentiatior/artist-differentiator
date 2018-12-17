@@ -25,7 +25,7 @@ Some possible improvements for this approach include exploring alternative metho
 
 
 ## Requirements
-The code is written for Python 2.7. The required modules for this project can be found in `requirements.txt`.
+The code is written for Python 2.7 in TensorFlow. The required modules for this project can be found in `requirements.txt`.
 
 ## Running
 Here we outline the different scripts and how to run them.
@@ -35,7 +35,7 @@ First you need to preprocess your data with the script `preprocess_data.py`. Thi
 
 `python preprocess_data.py --source sample_data/ --info-file data_info.csv --test-ratio 1`
 
-If you want to create triplets for training, the script `preprocess_data.py` has settings for doing so. To see options, run the command
+If you want to create triplets for training, the script has settings for doing so. To see options, run the command
 
 `python preprocess_data.py -h`
 
@@ -58,7 +58,7 @@ To generate PCA/t-SNE plots of the learned style encodings, use the script `appl
 
 `python apply_pca.py --weights weights_3_artists.mat --csv data_info.csv --source test_data/ --type test --style-layers-indices 3 4 --mode pca`
 
-To list the available options, run the command:
+To list the available settings, run the command:
 
 `python apply_pca.py -h`
 
