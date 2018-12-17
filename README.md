@@ -5,7 +5,10 @@ This is one attempt at solving the problem presented in the 2016 Kaggle competit
 ## How it works
 The approach used is outlined in the figure below.
 
-![](https://github.com/josefmal/artist-differentiator/blob/master/figures/siamese_net.svg "Siamese networks")
+<p align="center"> 
+<img src="https://github.com/josefmal/artist-differentiator/blob/master/figures/siamese_net.svg ">
+</p>
+
 
 From a training set of paintings we form triplets, each consisting of a base painting (anchor), another painting by the same artist (positive) and a third painting by a different artist (negative). When training, the paintings of a triplet is fed through a set of pretrained siamese CNNs and an encoding of the style of each painting is extracted (much like in neural
 style transfer). We then train the network further, on the triplet loss formed in terms of the style encodings of the anchor, positive and negative paintings. To evaluate if two paintings were made by the same artist, the paintings are fed through the same, trained network and the distance between their style encodings are compared.
