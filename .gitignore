@@ -17,10 +17,10 @@ test_images/
 *test*
 Log/
 *paintings*
-*.pdf
 *.save
 *.zip
 train_data
 dev_data
 test_data
 *answer*
+pca*
