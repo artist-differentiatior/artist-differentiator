@@ -6,7 +6,7 @@ We have used the dataset provided in the 2016 Kaggle competition ["Painter by Nu
 The approach used is outlined in the figure below.
 
 <p align="center"> 
-<img src=https://github.com/josefmal/artist-differentiator/blob/master/figures/siamese_net.svg>
+<img src=https://github.com/artist-differentiatior/artist-differentiator/blob/master/figures/siamese_net.svg>
 </p>
 
 From a training set of paintings we form triplets, each consisting of a base painting (anchor), another painting by the same artist (positive) and a third painting by a different artist (negative). When training, the paintings of a triplet is fed through a set of pretrained siamese CNNs and an encoding of the style of each painting is extracted (much like in neural
@@ -18,7 +18,7 @@ For detailed descriptions on the architectures and methods used, refer to our pa
 Some PCA/t-SNE plots of the style encodings learned by the model are presented below. Each point represents the style encoding of a painting and each color represents a different artist. The approach works well for a limited number of artists, but as the number of artists increases it becomes harder for the model to distinguish the styles.
 
 <p align="center"> 
-<img src=https://github.com/josefmal/artist-differentiator/blob/master/figures/results.svg >
+<img src=https://github.com/artist-differentiatior/artist-differentiator/blob/master/figures/results.svg >
 </p>
 
 Some possible improvements for this approach include exploring alternative methods for evaluating on a pair of images, given their style encodings. Another possible improvement would be to find an way to algorithmically generate non-trivial triplets for training, as the triplets currently used for training are completely random. See our [paper](https://drive.google.com/drive/folders/1oRqil4zFwI-TcJiYQLB2p4_2Po44p0le?usp=sharing) for details.
