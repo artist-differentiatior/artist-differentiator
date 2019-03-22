@@ -2,8 +2,10 @@
 A siamese CNN model trained with triplet loss to identify if two paintings are painted by the same artist.
 We have used the dataset provided in the 2016 Kaggle competition ["Painter by Numbers"](https://www.kaggle.com/c/painter-by-numbers).
 
+Authors: Josef Malmström and Albin Andersson Jagesten
+
 ## How it works
-The approach used is outlined in the figure below.
+The approach is outlined in the figure below.
 
 <p align="center"> 
 <img src=https://github.com/artist-differentiatior/artist-differentiator/blob/master/figures/siamese_net.svg>
@@ -54,7 +56,7 @@ To list the available settings, run the command:
 `python evaluate.py -h`
 
 ### Plotting PCA/t-SNE
-To generate PCA/t-SNE plots of the learned style encodings, use the script `apply_pca.py`. For examlpe, to generate a PCA plot of the style encodings for the sample images (with the weights linked above), run the following command:
+To generate PCA/t-SNE plots of the learned style encodings, use the script `apply_pca.py`. For example, to generate a PCA plot of the style encodings for the sample images (with the weights linked above), run the following command:
 
 `python apply_pca.py --weights weights_3_artists.mat --csv data_info.csv --source test_data/ --type test --style-layers-indices 3 4 --mode pca`
 
